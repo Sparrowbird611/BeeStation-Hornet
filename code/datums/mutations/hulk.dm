@@ -11,6 +11,12 @@
 	instability = 40
 	locked = TRUE
 
+/datum/mutation/human/gigantism/on_acquiring(mob/living/carbon/human/owner)
+	if(..())
+		return
+	owner.resize = 1.25
+	owner.update_transform()
+
 /datum/mutation/human/hulk/on_acquiring(mob/living/carbon/human/owner)
 	if(..())
 		return

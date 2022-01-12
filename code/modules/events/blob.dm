@@ -1,12 +1,15 @@
-/datum/round_event_control/blob
+/datum/round_event_control/blob //god, we really need a "latest start" var, because blobs spawning an hour in is cringe
 	name = "Blob"
 	typepath = /datum/round_event/ghost_role/blob
-	weight = 10
+	weight = 5
 	max_occurrences = 1
 
 	min_players = 20
 
+	dynamic_should_hijack = TRUE
+
 	gamemode_blacklist = list("blob") //Just in case a blob survives that long
+	can_malf_fake_alert = TRUE
 
 /datum/round_event/ghost_role/blob
 	announceChance	= 0
@@ -14,7 +17,7 @@
 	fakeable = TRUE
 
 /datum/round_event/ghost_role/blob/announce(fake)
-	priority_announce("Confirmed outbreak of level 5 biohazard aboard [station_name()]. All personnel must contain the outbreak.", "Biohazard Alert", 'sound/ai/outbreak5.ogg')
+	priority_announce("Confirmed outbreak of level 5 biohazard aboard [station_name()]. All personnel must contain the outbreak.", "Biohazard Alert", ANNOUNCER_OUTBREAK5)
 
 /datum/round_event/ghost_role/blob/spawn_role()
 	if(!GLOB.blobstart.len)

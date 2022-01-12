@@ -2,7 +2,11 @@
 	name = "shotgun"
 	desc = "A traditional shotgun with wood furniture and a four-shell capacity underneath."
 	icon_state = "shotgun"
+	lefthand_file = 'icons/mob/inhands/weapons/64x_guns_left.dmi'
+	righthand_file = 'icons/mob/inhands/weapons/64x_guns_right.dmi'
 	item_state = "shotgun"
+	inhand_x_dimension = 64
+	inhand_y_dimension = 64
 	fire_sound = "sound/weapons/shotgunshot.ogg"
 	vary_fire_sound = FALSE
 	fire_sound_volume = 90
@@ -18,8 +22,12 @@
 	internal_magazine = TRUE
 	casing_ejector = FALSE
 	bolt_wording = "pump"
+	bolt_type = BOLT_TYPE_PUMP
 	cartridge_wording = "shell"
 	tac_reloads = FALSE
+	fire_rate = 1 //reee
+	recoil = 1
+	pb_knockback = 2
 
 /obj/item/gun/ballistic/shotgun/blow_up(mob/user)
 	. = 0
@@ -36,6 +44,7 @@
 	name = "riot shotgun"
 	desc = "A sturdy shotgun with a longer magazine and a fixed tactical stock designed for non-lethal riot control."
 	icon_state = "riotshotgun"
+	item_state = "shotgun"
 	mag_type = /obj/item/ammo_box/magazine/internal/shot/riot
 	sawn_desc = "Come with me if you want to live."
 
@@ -50,14 +59,18 @@
 
 // Automatic Shotguns//
 
-/obj/item/gun/ballistic/shotgun/automatic/shoot_live_shot(mob/living/user as mob|obj)
+/obj/item/gun/ballistic/shotgun/automatic
+	weapon_weight = WEAPON_HEAVY
+
+/obj/item/gun/ballistic/shotgun/automatic/shoot_live_shot(mob/living/user, pointblank = 0, atom/pbtarget = null, message = 1)
 	..()
-	src.rack()
+	rack()
 
 /obj/item/gun/ballistic/shotgun/automatic/combat
 	name = "combat shotgun"
 	desc = "A semi automatic shotgun with tactical furniture and a six-shell capacity underneath."
 	icon_state = "cshotgun"
+	item_state = "shotgun_combat"
 	mag_type = /obj/item/ammo_box/magazine/internal/shot/com
 	w_class = WEIGHT_CLASS_HUGE
 
@@ -66,7 +79,24 @@
 	desc = "A compact version of the semi automatic combat shotgun. For close encounters."
 	icon_state = "cshotgunc"
 	mag_type = /obj/item/ammo_box/magazine/internal/shot/com/compact
+	weapon_weight = WEAPON_MEDIUM
 	w_class = WEIGHT_CLASS_BULKY
+
+/obj/item/gun/ballistic/shotgun/automatic/combat/compact/shoot_live_shot(mob/living/user, pointblank, atom/pbtarget, message)
+	if(check_wielded(user))
+		recoil = 6
+	else
+		recoil = initial(recoil)
+	. = ..()
+
+// Breaching Shotgun //
+
+/obj/item/gun/ballistic/shotgun/automatic/breaching
+	name = "tactical breaching shotgun"
+	desc = "A compact semi-auto shotgun designed to fire breaching slugs and create rapid entry points."
+	icon_state = "breachingshotgun"
+	mag_type = /obj/item/ammo_box/magazine/internal/shot/breaching
+	w_class = WEIGHT_CLASS_NORMAL //compact so it fits in backpacks
 
 //Dual Feed Shotgun
 
@@ -115,7 +145,7 @@
 
 /obj/item/gun/ballistic/shotgun/bulldog
 	name = "\improper Bulldog Shotgun"
-	desc = "A semi-auto, mag-fed shotgun for combat in narrow corridors, nicknamed 'Bulldog' by boarding parties. Compatible only with specialized 8-round drum magazines."
+	desc = "A semi-auto, mag-fed shotgun for combat in narrow corridors with a built in recoil dampening system, nicknamed 'Bulldog' by boarding parties. Compatible only with specialized 8-round drum magazines."
 	icon_state = "bulldog"
 	item_state = "bulldog"
 	w_class = WEIGHT_CLASS_NORMAL
@@ -125,6 +155,7 @@
 	burst_size = 1
 	fire_delay = 0
 	pin = /obj/item/firing_pin/implant/pindicate
+	spread_unwielded = 15
 	actions_types = list()
 	mag_display = TRUE
 	empty_indicator = TRUE
@@ -133,7 +164,11 @@
 	semi_auto = TRUE
 	internal_magazine = FALSE
 	tac_reloads = TRUE
-
+	fire_rate = 2
+	automatic = 1
+	recoil = 0
+	bolt_type = BOLT_TYPE_STANDARD	//Not using a pump
+	full_auto = TRUE
 
 /obj/item/gun/ballistic/shotgun/bulldog/unrestricted
 	pin = /obj/item/firing_pin
@@ -145,7 +180,7 @@
 	name = "double-barreled shotgun"
 	desc = "A true classic."
 	icon_state = "dshotgun"
-	item_state = "shotgun"
+	item_state = "shotgun_db"
 	w_class = WEIGHT_CLASS_BULKY
 	weapon_weight = WEAPON_MEDIUM
 	force = 10
@@ -164,6 +199,8 @@
 						)
 	semi_auto = TRUE
 	bolt_type = BOLT_TYPE_NO_BOLT
+	fire_rate = 2 //being double barrelled, you don't rely on internal mechanisms.
+	pb_knockback = 3
 
 /obj/item/gun/ballistic/shotgun/doublebarrel/AltClick(mob/user)
 	. = ..()
@@ -192,6 +229,7 @@
 	mag_type = /obj/item/ammo_box/magazine/internal/shot/improvised
 	sawn_desc = "I'm just here for the gasoline."
 	unique_reskin = null
+	recoil = 2
 	var/slung = FALSE
 
 /obj/item/gun/ballistic/shotgun/doublebarrel/improvised/attackby(obj/item/A, mob/user, params)
@@ -227,3 +265,48 @@
 	sawn_off = TRUE
 	slot_flags = ITEM_SLOT_BELT
 	recoil = SAWN_OFF_RECOIL
+
+/obj/item/gun/ballistic/shotgun/doublebarrel/hook
+	name = "hook modified sawn-off shotgun"
+	desc = "Range isn't an issue when you can bring your victim to you."
+	icon_state = "hookshotgun"
+	item_state = "shotgun"
+	load_sound = "sound/weapons/shotguninsert.ogg"
+	mag_type = /obj/item/ammo_box/magazine/internal/shot/bounty
+	w_class = WEIGHT_CLASS_BULKY
+	weapon_weight = WEAPON_MEDIUM
+	force = 10 //it has a hook on it
+	attack_verb = list("slashed", "hooked", "stabbed")
+	hitsound = 'sound/weapons/bladeslice.ogg'
+	//our hook gun!
+	var/obj/item/gun/magic/hook/bounty/hook
+	var/toggled = FALSE
+
+/obj/item/gun/ballistic/shotgun/doublebarrel/hook/Initialize()
+	. = ..()
+	hook = new /obj/item/gun/magic/hook/bounty(src)
+
+/obj/item/gun/ballistic/shotgun/doublebarrel/hook/AltClick(mob/user)
+	if(!istype(user) || !user.canUseTopic(src, BE_CLOSE, ismonkey(user)))
+		return
+	if(toggled)
+		to_chat(user,"<span class='notice'>You switch to the shotgun.</span>")
+		fire_sound = initial(fire_sound)
+	else
+		to_chat(user,"<span class='notice'>You switch to the hook.</span>")
+		fire_sound = 'sound/weapons/batonextend.ogg'
+	toggled = !toggled
+
+/obj/item/gun/ballistic/shotgun/doublebarrel/hook/examine(mob/user)
+	. = ..()
+	if(toggled)
+		. += "<span class='notice'>Alt-click to switch to the shotgun.</span>"
+	else
+		. += "<span class='notice'>Alt-click to switch to the hook.</span>"
+
+/obj/item/gun/ballistic/shotgun/doublebarrel/hook/afterattack(atom/target, mob/living/user, flag, params)
+	if(toggled)
+		hook.afterattack(target, user, flag, params)
+	else
+		return ..()
+

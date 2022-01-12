@@ -260,6 +260,16 @@
 ////////////Janitor Designs//////////////
 /////////////////////////////////////////
 
+/datum/design/larryframe
+	name = "Larry Frame"
+	desc = "A housing that serves as the base for constructing Larries."
+	id = "larry"
+	build_type = PROTOLATHE
+	materials = list(/datum/material/iron = 200)
+	build_path = /obj/item/larryframe
+	category = list("Electronics")
+	departmental_flags = DEPARTMENTAL_FLAG_SCIENCE
+
 /datum/design/advmop
 	name = "Advanced Mop"
 	desc = "An upgraded mop with a large internal capacity for holding water or other cleaning chemicals."
@@ -333,7 +343,6 @@
 	build_path = /obj/structure/holosign/barrier/wetsign
 	category = list("Equipment")
 	departmental_flags = DEPARTMENTAL_FLAG_SERVICE
-
 
 /datum/design/holosignsec
 	name = "Security Holobarrier Projector"
@@ -461,3 +470,44 @@
 	build_path = /obj/item/construction/plumbing
 	category = list("Equipment")
 	departmental_flags = DEPARTMENTAL_FLAG_MEDICAL
+
+/datum/design/glasses_prescription
+	name = "Prescription Glasses"
+	desc = "Made by Nerd. Co."
+	id = "glasses_prescription"
+	build_type = PROTOLATHE
+	materials = list(/datum/material/iron = 500, /datum/material/glass = 2000)
+	build_path = /obj/item/clothing/glasses/regular
+	category = list("Equipment")
+	departmental_flags = DEPARTMENTAL_FLAG_MEDICAL
+
+/////////////////////////////////////////
+/////////////////Tape////////////////////
+/////////////////////////////////////////
+
+/datum/design/sticky_tape
+	name = "Sticky Tape"
+	id = "sticky_tape"
+	build_type = PROTOLATHE
+	materials = list(/datum/material/plastic = 500)
+	build_path = /obj/item/stack/sticky_tape
+	category = list("Equipment")
+	departmental_flags = DEPARTMENTAL_FLAG_SERVICE
+
+/datum/design/super_sticky_tape
+	name = "Super Sticky Tape"
+	id = "super_sticky_tape"
+	build_type = PROTOLATHE
+	materials = list(/datum/material/plastic = 3000)
+	build_path = /obj/item/stack/sticky_tape/super
+	category = list("Equipment")
+	departmental_flags = DEPARTMENTAL_FLAG_SERVICE
+
+/datum/design/pointy_tape
+	name = "Pointy Tape"
+	id = "pointy_tape"
+	build_type = PROTOLATHE
+	materials = list(/datum/material/iron = 1500, /datum/material/plastic = 1000)
+	build_path = /obj/item/stack/sticky_tape/pointy
+	category = list("Equipment")
+	departmental_flags = DEPARTMENTAL_FLAG_SERVICE

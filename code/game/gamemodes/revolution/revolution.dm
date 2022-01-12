@@ -13,11 +13,13 @@
 	report_type = "revolution"
 	antag_flag = ROLE_REV
 	false_report_weight = 10
-	restricted_jobs = list("Security Officer", "Warden", "Detective", "AI", "Cyborg","Captain", "Head of Personnel", "Head of Security", "Chief Engineer", "Research Director", "Chief Medical Officer", "Brig Physician")
+	restricted_jobs = list("Security Officer", "Warden", "Detective", "AI", "Cyborg","Captain", "Head of Personnel", "Head of Security", "Chief Engineer", "Research Director", "Chief Medical Officer")
+	required_jobs = list(list("Captain"=1),list("Head of Personnel"=1),list("Head of Security"=1),list("Chief Engineer"=1),list("Research Director"=1),list("Chief Medical Officer"=1)) //Any head present
 	required_players = 30
 	required_enemies = 2
 	recommended_enemies = 3
 	enemy_minimum_age = 14
+	title_icon = "revolution"
 
 	announce_span = "danger"
 	announce_text = "Some crewmembers are attempting a coup!\n\
@@ -53,7 +55,7 @@
 	for (var/i=1 to max_headrevs)
 		if (antag_candidates.len==0)
 			break
-		var/datum/mind/lenin = antag_pick(antag_candidates)
+		var/datum/mind/lenin = antag_pick(antag_candidates, ROLE_REV_HEAD)
 		antag_candidates -= lenin
 		headrev_candidates += lenin
 		lenin.restricted_roles = restricted_jobs
@@ -118,7 +120,6 @@
 		if(!finished)
 			SSticker.mode.check_win()
 		check_counter = 0
-	return FALSE
 
 //////////////////////////////////////
 //Checks if the revs have won or not//
@@ -128,7 +129,6 @@
 		finished = 1
 	else if(check_heads_victory())
 		finished = 2
-	return
 
 ///////////////////////////////
 //Checks if the round is over//
@@ -138,7 +138,7 @@
 		if(finished)
 			SSshuttle.clearHostileEnvironment(src)
 		return ..()
-	if(finished != 0 && end_when_heads_dead)
+	if(finished && end_when_heads_dead)
 		return TRUE
 	else
 		return ..()
@@ -211,7 +211,7 @@
 	return ..()
 
 /datum/game_mode/revolution/speedy/process()
-	. = ..()
+	..()
 	if(check_counter == 0)
 		if (world.time > endtime && !fuckingdone)
 			fuckingdone = TRUE

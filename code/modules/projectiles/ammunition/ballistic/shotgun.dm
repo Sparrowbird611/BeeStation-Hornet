@@ -17,7 +17,7 @@
 
 /obj/item/ammo_casing/shotgun/sleepytime
 	name = "soporific shell"
-	desc = "A shotgun shell loaded with a hypodermic needle containing a low strength sleeping agent."
+	desc = "A shotgun shell loaded with a hypodermic needle containing a low strength knock-out agent that will confuse a target on the first shot, and put them to sleep on the second."
 	icon_state = "sleepy"
 	projectile_type = /obj/item/projectile/bullet/sleepy
 
@@ -68,7 +68,7 @@
 	icon_state = "gshell"
 	projectile_type = /obj/item/projectile/bullet/pellet/shotgun_buckshot
 	pellets = 6
-	variance = 25
+	variance = 10
 
 /obj/item/ammo_casing/shotgun/rubbershot
 	name = "rubber shot"
@@ -76,7 +76,16 @@
 	icon_state = "bshell"
 	projectile_type = /obj/item/projectile/bullet/pellet/shotgun_rubbershot
 	pellets = 6
-	variance = 25
+	variance = 20
+	materials = list(/datum/material/iron=4000)
+
+/obj/item/ammo_casing/shotgun/incapacitate
+	name = "custom incapacitating shot"
+	desc = "A shotgun casing filled with... something. used to incapacitate targets."
+	icon_state = "bountyshell"
+	projectile_type = /obj/item/projectile/bullet/pellet/shotgun_incapacitate
+	pellets = 12//double the pellets, but half the stun power of each, which makes this best for just dumping right in someone's face.
+	variance = 20
 	materials = list(/datum/material/iron=4000)
 
 /obj/item/ammo_casing/shotgun/improvised
@@ -145,3 +154,10 @@
 	reagents.add_reagent(/datum/reagent/toxin/mutetoxin, 6) //;HELP OPS IN MAINT
 	reagents.add_reagent(/datum/reagent/toxin/coniine, 6)
 	reagents.add_reagent(/datum/reagent/toxin/sodium_thiopental, 6)
+
+/obj/item/ammo_casing/shotgun/breacher
+	name = "breaching slug"
+	desc = "A 12 gauge anti-material slug. Great for breaching airlocks and windows with minimal shots."
+	icon_state = "breacher"
+	projectile_type = /obj/item/projectile/bullet/shotgun_breaching
+	materials = list(/datum/material/iron=4000)

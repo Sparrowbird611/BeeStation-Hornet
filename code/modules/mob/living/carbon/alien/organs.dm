@@ -117,9 +117,11 @@
 /obj/item/organ/alien/hivenode/Insert(mob/living/carbon/M, special = 0)
 	..()
 	M.faction |= ROLE_ALIEN
+	ADD_TRAIT(M, TRAIT_XENO_IMMUNE, "xeno immune")
 
 /obj/item/organ/alien/hivenode/Remove(mob/living/carbon/M, special = 0)
 	M.faction -= ROLE_ALIEN
+	REMOVE_TRAIT(M, TRAIT_XENO_IMMUNE, "xeno immune")
 	..()
 
 //When the alien queen dies, all aliens suffer a penalty as punishment for failing to protect her.
@@ -142,7 +144,7 @@
 	owner.stuttering += 30
 
 	recent_queen_death = 1
-	owner.throw_alert("alien_noqueen", /obj/screen/alert/alien_vulnerable)
+	owner.throw_alert("alien_noqueen", /atom/movable/screen/alert/alien_vulnerable)
 	addtimer(CALLBACK(src, .proc/clear_queen_death), QUEEN_DEATH_DEBUFF_DURATION)
 
 

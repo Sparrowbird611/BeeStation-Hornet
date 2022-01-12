@@ -174,9 +174,11 @@
 	active = TRUE
 	addtimer(CALLBACK(src, .proc/prime), isnull(delayoverride)? det_time : delayoverride)
 
-/obj/item/grenade/chem_grenade/prime()
+/obj/item/grenade/chem_grenade/prime(mob/living/lanced_by)
 	if(stage != GRENADE_READY)
 		return
+
+	. = ..()
 
 	var/list/datum/reagents/reactants = list()
 	for(var/obj/item/reagent_containers/glass/G in beakers)
@@ -212,7 +214,7 @@
 	ignition_temp = 25 // Large grenades are slightly more effective at setting off heat-sensitive mixtures than smaller grenades.
 	threatscale = 1.1	// 10% more effective.
 
-/obj/item/grenade/chem_grenade/large/prime()
+/obj/item/grenade/chem_grenade/large/prime(mob/living/lanced_by)
 	if(stage != GRENADE_READY)
 		return
 
@@ -281,7 +283,7 @@
 		return
 	..()
 
-/obj/item/grenade/chem_grenade/adv_release/prime()
+/obj/item/grenade/chem_grenade/adv_release/prime(mob/living/lanced_by)
 	if(stage != GRENADE_READY)
 		return
 
@@ -580,6 +582,24 @@
 
 	B1.reagents.add_reagent(/datum/reagent/potassium, 100)
 	B2.reagents.add_reagent(/datum/reagent/water/holywater, 100)
+
+	beakers += B1
+	beakers += B2
+
+/obj/item/grenade/chem_grenade/ghostbuster
+	name = "counterparanormal foam grenade"
+	desc = "The note on the side guarantees to ward off most malicious spirits from covered area.\ The grenade itself seems to be old and covered with dust."
+	stage = GRENADE_READY
+
+/obj/item/grenade/chem_grenade/ghostbuster/Initialize()
+	. = ..()
+	var/obj/item/reagent_containers/glass/beaker/large/B1 = new(src)
+	var/obj/item/reagent_containers/glass/beaker/large/B2 = new(src)
+
+	B1.reagents.add_reagent(/datum/reagent/fluorosurfactant, 50)
+	B1.reagents.add_reagent(/datum/reagent/water/holywater, 50)
+	B2.reagents.add_reagent(/datum/reagent/water, 50)
+	B2.reagents.add_reagent(/datum/reagent/consumable/sodiumchloride, 50)
 
 	beakers += B1
 	beakers += B2

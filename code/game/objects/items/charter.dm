@@ -48,6 +48,11 @@
 
 	if(!new_name)
 		return
+
+	if(CHAT_FILTER_CHECK(new_name))
+		to_chat(user, "<span class='warning'>Your name has been automatically denied. It contains prohibited words.</span>")
+		return
+
 	log_game("[key_name(user)] has proposed to name the station as \
 		[new_name]")
 
@@ -95,7 +100,7 @@
 
 
 /obj/item/station_charter/flag
-	name = "nanotrasen banner"
+	name = "\improper Nanotrasen banner"
 	icon = 'icons/obj/banner.dmi'
 	name_type = "planet"
 	icon_state = "banner"

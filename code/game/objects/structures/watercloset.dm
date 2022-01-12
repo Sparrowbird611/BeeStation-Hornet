@@ -107,19 +107,12 @@
 		return ..()
 
 /obj/structure/toilet/secret
-	var/obj/item/secret
 	var/secret_type = null
 
-/obj/structure/toilet/secret/Initialize(mapload)
+/obj/structure/toilet/secret/Initialize()
 	. = ..()
 	if (secret_type)
-		secret = new secret_type(src)
-		secret.desc += " It's a secret!"
-		w_items += secret.w_class
-		contents += secret
-
-
-
+		new secret_type(src)
 
 /obj/structure/urinal
 	name = "urinal"
@@ -224,6 +217,35 @@
 	var/busy = FALSE 	//Something's being washed at the moment
 	var/dispensedreagent = /datum/reagent/water // for whenever plumbing happens
 
+
+/obj/structure/sinkframe
+	name = "sink frame"
+	icon = 'icons/obj/watercloset.dmi'
+	icon_state = "sink_frame"
+	desc = "A sink frame, that needs 2 plastic sheets to finish construction."
+	anchored = FALSE
+
+/obj/structure/sinkframe/attackby(obj/item/I, mob/living/user, params)
+	if(istype(I, /obj/item/stack/sheet/plastic))
+		balloon_alert(user, "You start constructing the sink")
+		if(do_after(user, 4 SECONDS, target = src))
+			I.use(1)
+			balloon_alert(user, "Sink created")
+			var/obj/structure/sink/new_sink = new /obj/structure/sink(loc)
+			new_sink.setDir(dir)
+			qdel(src)
+			return
+	return ..()
+
+/obj/structure/sinkframe/Initialize()
+	. = ..()
+	AddComponent(/datum/component/simple_rotation, ROTATION_ALTCLICK | ROTATION_CLOCKWISE | ROTATION_COUNTERCLOCKWISE | ROTATION_VERBS, null, CALLBACK(src, .proc/can_be_rotated))
+
+/obj/structure/sinkframe/proc/can_be_rotated(mob/user, rotation_type)
+	if(anchored)
+		to_chat(user, "<span class='warning'>It is fastened to the floor!</span>")
+	return !anchored
+
 /obj/structure/sink/attack_hand(mob/living/user)
 	. = ..()
 	if(.)
@@ -287,7 +309,7 @@
 	if(istype(O, /obj/item/melee/baton))
 		var/obj/item/melee/baton/B = O
 		if(B.cell)
-			if(B.cell.charge > 0 && B.status == 1)
+			if(B.cell.charge > 0 && B.turned_on)
 				flick("baton_active", src)
 				var/stunforce = B.stunforce
 				user.Paralyze(stunforce)
@@ -339,7 +361,6 @@
 	qdel(src)
 
 
-
 /obj/structure/sink/kitchen
 	name = "kitchen sink"
 	icon_state = "sink_alt"
@@ -374,7 +395,8 @@
 	name = "curtain"
 	desc = "Contains less than 1% mercury."
 	icon = 'icons/obj/watercloset.dmi'
-	icon_state = "open"
+	icon_state = "bathroom-open"
+	var/icon_type = "bathroom"//used in making the icon state
 	color = "#ACD1E9" //Default color, didn't bother hardcoding other colors, mappers can and should easily change it.
 	alpha = 200 //Mappers can also just set this to 255 if they want curtains that can't be seen through
 	layer = SIGN_LAYER
@@ -389,13 +411,13 @@
 
 /obj/structure/curtain/update_icon()
 	if(!open)
-		icon_state = "closed"
+		icon_state = "[icon_type]-closed"
 		layer = WALL_OBJ_LAYER
 		density = TRUE
 		open = FALSE
 
 	else
-		icon_state = "open"
+		icon_state = "[icon_type]-open"
 		layer = SIGN_LAYER
 		density = FALSE
 		open = TRUE
@@ -431,7 +453,7 @@
 	toggle()
 
 /obj/structure/curtain/deconstruct(disassembled = TRUE)
-	new /obj/item/stack/sheet/cloth (loc, 2)
+	new /obj/item/stack/sheet/cotton/cloth (loc, 2)
 	new /obj/item/stack/sheet/plastic (loc, 2)
 	new /obj/item/stack/rods (loc, 1)
 	qdel(src)
@@ -445,3 +467,9 @@
 				playsound(loc, 'sound/weapons/tap.ogg', 50, 1)
 		if(BURN)
 			playsound(loc, 'sound/items/welder.ogg', 80, 1)
+
+/obj/structure/curtain/bounty
+	icon_type = "bounty"
+	icon_state = "bounty-open"
+	color = null
+	alpha = 255

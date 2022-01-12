@@ -52,6 +52,24 @@
 		qdel(W)
 		qdel(src)
 
+/obj/item/bot_assembly/larry
+	name = "incomplete larry frame"
+	desc = "It's a larry with a sensor attached"
+	icon_state = "larry_proxy"
+	throwforce = 5
+	created_name = "Larry"
+
+/obj/item/bot_assembly/larry/attackby(obj/item/W, mob/user, params)
+	..()
+	if(istype(W, /obj/item/bodypart/l_arm/robot) || istype(W, /obj/item/bodypart/r_arm/robot))
+		if(!can_finish_build(W, user))
+			return
+		var/mob/living/simple_animal/bot/cleanbot/larry/A = new(drop_location())
+		A.name = created_name
+		A.robot_arm = W.type
+		to_chat(user, "<span class='notice'>You add [W] to [src]. Beep boop!</span>")
+		qdel(W)
+		qdel(src)
 
 //Edbot Assembly
 /obj/item/bot_assembly/ed209
@@ -163,7 +181,7 @@
 					if(!istype(W, /obj/item/gun/energy/laser/redtag))
 						return
 				if("")
-					if(!istype(W, /obj/item/gun/energy/e_gun/dragnet))
+					if(!istype(W, /obj/item/gun/energy/disabler))
 						return
 				else
 					return
@@ -456,7 +474,7 @@
 			else if(I.tool_behaviour == TOOL_SCREWDRIVER) //deconstruct
 				build_step--
 				icon_state = initial(icon_state)
-				to_chat(user, "<span class='notice'>You unbolt [src]'s energy swords</span>")
+				to_chat(user, "<span class='notice'>You unbolt [src]'s energy swords.</span>")
 				for(var/IS in 1 to swordamt)
 					new /obj/item/melee/transforming/energy/sword/saber(Tsec)
 
@@ -488,5 +506,35 @@
 				to_chat(user, "<span class='notice'>You add the [I] to [src]! Beep Boop!</span>")
 				var/mob/living/simple_animal/bot/firebot/F = new(drop_location())
 				F.name = created_name
+				qdel(I)
+				qdel(src)
+
+//Atmosbot Assembly
+/obj/item/bot_assembly/atmosbot
+	name = "incomplete atmosbot assembly"
+	desc = "An incomplete atmosbot with an analyser attached to it"
+	icon_state = "atmosbot_assembly"
+	created_name = "Atmosbot"
+
+/obj/item/bot_assembly/atmosbot/attackby(obj/item/I, mob/user, params)
+	..()
+	switch(build_step)
+		if(ASSEMBLY_FIRST_STEP)
+			if(istype(I, /obj/item/tank/internals))
+				if(!user.temporarilyRemoveItemFromInventory(I))
+					return
+				to_chat(user,"<span class='notice'>You add the [I] to [src]!</span>")
+				icon_state = "atmosbot_assembly_tank"
+				desc = "An incomplete atmosbot assembly with a tank strapped to it."
+				qdel(I)
+				build_step++
+
+		if(ASSEMBLY_SECOND_STEP)
+			if(isprox(I))
+				if(!can_finish_build(I, user))
+					return
+				to_chat(user, "<span class='notice'>You add the [I] to [src]! Beep Boop!</span>")
+				var/mob/living/simple_animal/bot/atmosbot/A = new(drop_location())
+				A.name = created_name
 				qdel(I)
 				qdel(src)

@@ -41,16 +41,16 @@
 
 /obj/item/stock_parts/cell/vv_edit_var(var_name, var_value)
 	switch(var_name)
-		if("self_recharge")
+		if(NAMEOF(src, self_recharge))
 			if(var_value)
 				START_PROCESSING(SSobj, src)
 			else
 				STOP_PROCESSING(SSobj, src)
 	. = ..()
 
-/obj/item/stock_parts/cell/process()
+/obj/item/stock_parts/cell/process(delta_time)
 	if(self_recharge)
-		give(chargerate * 0.25)
+		give(chargerate * 0.125 * delta_time)
 	else
 		return PROCESS_KILL
 
@@ -148,9 +148,48 @@
 				if(prob(25))
 					corrupt()
 
+/obj/item/stock_parts/cell/attack_self(mob/user)
+	if(isethereal(user))
+		var/mob/living/carbon/human/H = user
+		var/datum/species/ethereal/E = H.dna.species
+		if(E.drain_time > world.time)
+			return
+		var/obj/item/organ/stomach/battery/stomach = H.getorganslot(ORGAN_SLOT_STOMACH)
+		if(!istype(stomach))
+			to_chat(H, "<span class='warning'>You can't receive charge!</span>")
+			return
+		if(H.nutrition >= NUTRITION_LEVEL_ALMOST_FULL)
+			to_chat(user, "<span class='warning'>You are already fully charged!</span>")
+			return
+
+		to_chat(H, "<span class='notice'>You clumsily channel power through the [src] and into your body, wasting some in the process.</span>")
+		E.drain_time = world.time + 25
+		while(do_after(user, 20, target = src))
+			if(!istype(stomach))
+				to_chat(H, "<span class='warning'>You can't receive charge!</span>")
+				return
+			E.drain_time = world.time + 25
+			if(charge > 300)
+				stomach.adjust_charge(75)
+				charge -= 300 //you waste way more than you receive, so that ethereals cant just steal one cell and forget about hunger
+				to_chat(H, "<span class='notice'>You receive some charge from the [src].</span>")
+			else
+				stomach.adjust_charge(charge/4)
+				charge = 0
+				to_chat(H, "<span class='notice'>You drain the [src].</span>")
+				E.drain_time = 0
+				return
+
+			if(stomach.charge >= stomach.max_charge)
+				to_chat(H, "<span class='notice'>You are now fully charged.</span>")
+				E.drain_time = 0
+				return
+		to_chat(H, "<span class='warning'>You fail to receive charge from the [src]!</span>")
+		E.drain_time = 0
+	return
 
 /obj/item/stock_parts/cell/blob_act(obj/structure/blob/B)
-	ex_act(EXPLODE_DEVASTATE)
+	SSexplosions.high_mov_atom += src
 
 /obj/item/stock_parts/cell/proc/get_electrocute_damage()
 	if(charge >= 1000)

@@ -15,30 +15,36 @@
 
 	// Config actually from the JSON - should default to Box
 	var/map_name = "Box Station"
+	var/map_link = null //This is intentionally wrong, this will make it not link to webmap.
 	var/map_path = "map_files/BoxStation"
 	var/map_file = "BoxStation.dmm"
 
 	var/traits = null
-	var/space_ruin_levels = 7
+	var/space_ruin_levels = 4	//Keep this low, as new ones are created dynamically when needed.
 	var/space_empty_levels = 1
 
 	var/minetype = "lavaland"
 
 	var/allow_custom_shuttles = TRUE
+	var/allow_night_lighting = TRUE
 	var/shuttles = list(
 		"cargo" = "cargo_box",
 		"ferry" = "ferry_fancy",
 		"whiteship" = "whiteship_box",
 		"emergency" = "emergency_box")
 
-/proc/load_map_config(filename = "data/next_map.json", default_to_box, delete_after, error_if_missing = TRUE)
+/proc/load_map_config(filename = "next_map", foldername = DATA_DIRECTORY, default_to_box, delete_after, error_if_missing = TRUE)
+	if(IsAdminAdvancedProcCall())
+		return
+
+	filename = "[foldername]/[filename].json"
 	var/datum/map_config/config = new
 	if (default_to_box)
 		return config
 	if (!config.LoadConfig(filename, error_if_missing))
 		qdel(config)
 		config = new /datum/map_config  // Fall back to Box
-	if (delete_after)
+	else if (delete_after)
 		fdel(filename)
 	return config
 
@@ -54,7 +60,7 @@
 		log_world("Could not open map_config: [filename]")
 		return
 
-	json = file2text(json)
+	json = rustg_file_read(json)
 	if(!json)
 		log_world("map_config is not text: [filename]")
 		return
@@ -110,14 +116,14 @@
 		return
 
 	var/temp = json["space_ruin_levels"]
-	if (isnum(temp))
+	if (isnum_safe(temp))
 		space_ruin_levels = temp
 	else if (!isnull(temp))
 		log_world("map_config space_ruin_levels is not a number!")
 		return
 
 	temp = json["space_empty_levels"]
-	if (isnum(temp))
+	if (isnum_safe(temp))
 		space_empty_levels = temp
 	else if (!isnull(temp))
 		log_world("map_config space_empty_levels is not a number!")
@@ -126,7 +132,14 @@
 	if ("minetype" in json)
 		minetype = json["minetype"]
 
+	if("map_link" in json)						
+		map_link = json["map_link"]
+	else
+		log_world("map_link missing from json!")
+
 	allow_custom_shuttles = json["allow_custom_shuttles"] != FALSE
+
+	allow_night_lighting = json["allow_night_lighting"] != FALSE
 
 	defaulted = FALSE
 	return TRUE
@@ -143,6 +156,6 @@
 	var/below_max = !(config_max_users) || GLOB.clients.len <= config_max_users
 	var/above_min = !(config_min_users) || GLOB.clients.len >= config_min_users
 	return votable && below_max && above_min
-	
+
 /datum/map_config/proc/MakeNextMap()
 	return config_filename == "data/next_map.json" || fcopy(config_filename, "data/next_map.json")

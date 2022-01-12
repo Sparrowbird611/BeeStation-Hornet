@@ -16,7 +16,7 @@
 	radio_channel = RADIO_CHANNEL_SECURITY
 	bot_type = SEC_BOT
 	model = "ED-209"
-	bot_core = /obj/machinery/bot_core/secbot
+	bot_core_type = /obj/machinery/bot_core/secbot
 	window_id = "autoed209"
 	window_name = "Automatic Security Unit v2.6"
 	allow_pai = 0
@@ -40,12 +40,11 @@
 	var/check_records = TRUE //Does it check security records?
 	var/arrest_type = FALSE //If true, don't handcuff
 	var/projectile = /obj/item/projectile/energy/electrode //Holder for projectile type
-	var/shoot_sound = 'sound/weapons/taser.ogg'
+	var/shoot_sound = 'sound/weapons/taser2.ogg'
 	var/cell_type = /obj/item/stock_parts/cell
 	var/vest_type = /obj/item/clothing/suit/armor/vest
 
 	do_footstep = TRUE
-
 
 /mob/living/simple_animal/bot/ed209/Initialize(mapload,created_name,created_lasercolor)
 	. = ..()
@@ -119,7 +118,6 @@ Maintenance panel panel is [open ? "opened" : "closed"]<BR>"},
 Arrest Unidentifiable Persons: []<BR>
 Arrest for Unauthorized Weapons: []<BR>
 Arrest for Warrant: []<BR>
-<BR>
 Operating Mode: []<BR>
 Report Arrests[]<BR>
 Auto Patrol[]"},
@@ -160,7 +158,7 @@ Auto Patrol[]"},
 			declare_arrests = !declare_arrests
 			update_controls()
 
-/mob/living/simple_animal/bot/ed209/proc/judgement_criteria()
+/mob/living/simple_animal/bot/ed209/proc/judgment_criteria()
 	var/final = FALSE
 	if(idcheck)
 		final = final|JUDGE_IDCHECK
@@ -175,8 +173,8 @@ Auto Patrol[]"},
 	return final
 
 /mob/living/simple_animal/bot/ed209/proc/retaliate(mob/living/carbon/human/H)
-	var/judgement_criteria = judgement_criteria()
-	threatlevel = H.assess_threat(judgement_criteria, weaponcheck=CALLBACK(src, .proc/check_for_weapons))
+	var/judgment_criteria = judgment_criteria()
+	threatlevel = H.assess_threat(judgment_criteria, weaponcheck=CALLBACK(src, .proc/check_for_weapons))
 	threatlevel += 6
 	if(threatlevel >= 4)
 		target = H
@@ -222,13 +220,13 @@ Auto Patrol[]"},
 	if(disabled)
 		return
 
-	var/judgement_criteria = judgement_criteria()
+	var/judgment_criteria = judgment_criteria()
 	var/list/targets = list()
 	for(var/mob/living/carbon/C in view(7,src)) //Let's find us a target
 		var/threatlevel = 0
 		if(C.incapacitated())
 			continue
-		threatlevel = C.assess_threat(judgement_criteria, lasercolor, weaponcheck=CALLBACK(src, .proc/check_for_weapons))
+		threatlevel = C.assess_threat(judgment_criteria, lasercolor, weaponcheck=CALLBACK(src, .proc/check_for_weapons))
 		//speak(C.real_name + text(": threat: []", threatlevel))
 		if(threatlevel < 4 )
 			continue
@@ -345,7 +343,7 @@ Auto Patrol[]"},
 		return
 	anchored = FALSE
 	threatlevel = 0
-	var/judgement_criteria = judgement_criteria()
+	var/judgment_criteria = judgment_criteria()
 	for (var/mob/living/carbon/C in view(7,src)) //Let's find us a criminal
 		if((C.stat) || (C.handcuffed))
 			continue
@@ -353,7 +351,7 @@ Auto Patrol[]"},
 		if((C.name == oldtarget_name) && (world.time < last_found + 100))
 			continue
 
-		threatlevel = C.assess_threat(judgement_criteria, lasercolor, weaponcheck=CALLBACK(src, .proc/check_for_weapons))
+		threatlevel = C.assess_threat(judgment_criteria, lasercolor, weaponcheck=CALLBACK(src, .proc/check_for_weapons))
 
 		if(!threatlevel)
 			continue
@@ -389,7 +387,7 @@ Auto Patrol[]"},
 	drop_part(cell_type, Tsec)
 
 	if(!lasercolor)
-		var/obj/item/gun/energy/e_gun/dragnet/G = new (Tsec)
+		var/obj/item/gun/energy/disabler/G = new (Tsec)
 		G.cell.charge = 0
 		G.update_icon()
 	else if(lasercolor == "b")
@@ -431,7 +429,7 @@ Auto Patrol[]"},
 	else
 		if(!lasercolor)
 			shoot_sound = 'sound/weapons/laser.ogg'
-			projectile = /obj/item/projectile/energy/net
+			projectile = /obj/item/projectile/beam/disabler
 		else if(lasercolor == "b")
 			projectile = /obj/item/projectile/beam/lasertag/bluetag
 		else if(lasercolor == "r")
@@ -508,16 +506,18 @@ Auto Patrol[]"},
 				lasertag_check++
 		if(lasertag_check)
 			icon_state = "[lasercolor]ed2090"
-			disabled = 1
+			disabled = TRUE
 			target = null
-			spawn(100)
-				disabled = 0
-				icon_state = "[lasercolor]ed2091"
+			addtimer(CALLBACK(src, .proc/reenable), 100)
 			return BULLET_ACT_HIT
 		else
 			. = ..()
 	else
 		. = ..()
+
+/mob/living/simple_animal/bot/ed209/proc/reenable()
+	disabled = FALSE
+	icon_state = "[lasercolor]ed2091"
 
 /mob/living/simple_animal/bot/ed209/bluetag
 	lasercolor = "b"
@@ -560,8 +560,8 @@ Auto Patrol[]"},
 	C.stuttering = 5
 	if(ishuman(C))
 		var/mob/living/carbon/human/H = C
-		var/judgement_criteria = judgement_criteria()
-		threat = H.assess_threat(judgement_criteria, weaponcheck=CALLBACK(src, .proc/check_for_weapons))
+		var/judgment_criteria = judgment_criteria()
+		threat = H.assess_threat(judgment_criteria, weaponcheck=CALLBACK(src, .proc/check_for_weapons))
 	log_combat(src,C,"stunned")
 	if(declare_arrests)
 		var/area/location = get_area(src)
@@ -574,11 +574,13 @@ Auto Patrol[]"},
 	playsound(src, 'sound/weapons/cablecuff.ogg', 30, TRUE, -2)
 	C.visible_message("<span class='danger'>[src] is trying to put zipties on [C]!</span>",\
 						"<span class='userdanger'>[src] is trying to put zipties on you!</span>")
+	addtimer(CALLBACK(src, .proc/attempt_handcuff, C), 60)
 
-	spawn(60)
-		if( !on || !Adjacent(C) || !isturf(C.loc) ) //if he's in a closet or not adjacent, we cancel cuffing.
-			return
-		if(!C.handcuffed)
-			C.handcuffed = new /obj/item/restraints/handcuffs/cable/zipties/used(C)
-			C.update_handcuffed()
-			back_to_idle()
+/mob/living/simple_animal/bot/ed209/proc/attempt_handcuff(mob/living/carbon/C)
+	if(!on || !Adjacent(C) || !isturf(C.loc) ) //if he's in a closet or not adjacent, we cancel cuffing.
+		return
+	if(!C.handcuffed)
+		C.handcuffed = new /obj/item/restraints/handcuffs/cable/zipties/used(C)
+		C.update_handcuffed()
+		playsound(src, "law", 50, 0)
+		back_to_idle()

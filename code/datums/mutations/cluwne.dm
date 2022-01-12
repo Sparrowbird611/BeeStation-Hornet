@@ -1,6 +1,7 @@
 /datum/mutation/human/cluwne
 
 	name = "Cluwne"
+	desc = "Turns a person into a Cluwne, a poor soul cursed to a short and miserable life by the honkmother."
 	quality = NEGATIVE
 	locked = TRUE
 	text_gain_indication = "<span class='danger'>You feel like your brain is tearing itself apart.</span>"
@@ -10,29 +11,30 @@
 		return
 	owner.dna.add_mutation(CLOWNMUT)
 	owner.dna.add_mutation(EPILEPSY)
-	owner.setBrainLoss(200)
-
+	owner.setOrganLoss(ORGAN_SLOT_BRAIN, 199)
+	
 	var/mob/living/carbon/human/H = owner
-
+	
+	playsound(H.loc, 'sound/misc/bikehorn_creepy.ogg', 50, 1)
 	if(!istype(H.wear_mask, /obj/item/clothing/mask/cluwne))
 		if(!H.doUnEquip(H.wear_mask))
 			qdel(H.wear_mask)
-		H.equip_to_slot_or_del(new /obj/item/clothing/mask/cluwne(H), SLOT_WEAR_MASK)
+		H.equip_to_slot_or_del(new /obj/item/clothing/mask/cluwne(H), ITEM_SLOT_MASK)
 	if(!istype(H.w_uniform, /obj/item/clothing/under/cluwne))
 		if(!H.doUnEquip(H.w_uniform))
 			qdel(H.w_uniform)
-		H.equip_to_slot_or_del(new /obj/item/clothing/under/cluwne(H), SLOT_W_UNIFORM)
+		H.equip_to_slot_or_del(new /obj/item/clothing/under/cluwne(H), ITEM_SLOT_ICLOTHING)
 	if(!istype(H.shoes, /obj/item/clothing/shoes/cluwne))
 		if(!H.doUnEquip(H.shoes))
 			qdel(H.shoes)
-		H.equip_to_slot_or_del(new /obj/item/clothing/shoes/cluwne(H), SLOT_SHOES)
+		H.equip_to_slot_or_del(new /obj/item/clothing/shoes/cluwne(H), ITEM_SLOT_FEET)
 
-	owner.equip_to_slot_or_del(new /obj/item/clothing/gloves/color/white(owner), SLOT_GLOVES) // this is purely for cosmetic purposes incase they aren't wearing anything in that slot
-	owner.equip_to_slot_or_del(new /obj/item/storage/backpack/clown(owner), SLOT_BACK) // ditto
+	owner.equip_to_slot_or_del(new /obj/item/clothing/gloves/color/white(owner), ITEM_SLOT_GLOVES) // this is purely for cosmetic purposes incase they aren't wearing anything in that slot
+	owner.equip_to_slot_or_del(new /obj/item/storage/backpack/clown(owner), ITEM_SLOT_BACK) // ditto
 
 /datum/mutation/human/cluwne/on_life(mob/living/carbon/human/owner)
 	if((prob(15) && owner.IsUnconscious()))
-		owner.setBrainLoss(200) // there I changed it to setBrainLoss
+		owner.setOrganLoss(ORGAN_SLOT_BRAIN, 199)
 		switch(rand(1, 6))
 			if(1)
 				owner.say("HONK")
@@ -57,4 +59,4 @@
 	flash_act()
 
 	if (client)
-		SSmedals.UnlockMedal(MEDAL_GET_CLUWNED,client)
+		client.give_award(/datum/award/achievement/misc/cluwne, src)

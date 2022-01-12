@@ -30,6 +30,7 @@
 #define ACCESS_CARGO 31
 #define ACCESS_CONSTRUCTION 32
 #define ACCESS_CHEMISTRY 33
+#define ACCESS_BRIGPHYS 34
 #define ACCESS_HYDROPONICS 35
 #define ACCESS_LIBRARY 37
 #define ACCESS_LAWYER 38
@@ -41,6 +42,7 @@
 #define ACCESS_THEATRE 46
 #define ACCESS_RESEARCH 47
 #define ACCESS_MINING 48
+#define ACCESS_EXPLORATION 49
 #define ACCESS_MAILSORTING 50
 #define ACCESS_VAULT 53
 #define ACCESS_MINING_STATION 54
@@ -48,7 +50,6 @@
 #define ACCESS_CE 56
 #define ACCESS_HOP 57
 #define ACCESS_HOS 58
-#define ACCESS_APOTHECARY 59
 /// Request console announcements
 #define ACCESS_RC_ANNOUNCE 59
 /// Used for events which require at least two people to confirm them
@@ -62,6 +63,11 @@
 #define ACCESS_WEAPONS 66 //! Weapon authorization for secbots
 #define ACCESS_NETWORK 67 //! NTnet diagnostics/monitoring software
 #define ACCESS_CLONING 68 //! Cloning room and clone pod ejection
+#define ACCESS_SEC_RECORDS 69 //! Update security records
+#define ACCESS_RD_SERVER 70 //! Access to the R&D server room
+
+/// Room and launching.
+#define ACCESS_AUX_BASE 72
 
 	//BEGIN CENTCOM ACCESS
 	/*Should leave plenty of room if we need to add more access levels.
@@ -79,6 +85,10 @@
 	//The Syndicate
 #define ACCESS_SYNDICATE 150 //!General Syndicate Access. Includes Syndicate mechs and ruins.
 #define ACCESS_SYNDICATE_LEADER 151 //!Nuke Op Leader Access
+
+	//Independant Factions
+#define ACCESS_PIRATES 180 //! Pirate ship access
+#define ACCESS_HUNTERS 181 //! Bounty hunter access
 
 	//Away Missions or Ruins
 	/*For generic away-mission/ruin access. Why would normal crew have access to a long-abandoned derelict

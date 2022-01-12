@@ -30,12 +30,16 @@ GLOBAL_LIST_INIT(huds, list(
 	ANTAG_HUD_HIVE = new/datum/atom_hud/antag/hidden(),
 	ANTAG_HUD_OBSESSED = new/datum/atom_hud/antag/hidden(),
 	ANTAG_HUD_FUGITIVE = new/datum/atom_hud/antag(),
-	ANTAG_HUD_HIVEAWAKE = new/datum/atom_hud/antag()
+	ANTAG_HUD_HIVEAWAKE = new/datum/atom_hud/antag(),
+	ANTAG_HUD_BRAINWASHED = new/datum/atom_hud/antag/hidden(),
+	ANTAG_HUD_SURVIVALIST = new/datum/atom_hud/antag/hidden(),
+	ANTAG_HUD_INCURSION = new/datum/atom_hud/antag(),
+	ANTAG_HUD_HERETIC = new/datum/atom_hud/antag/hidden()
 	))
 
 /datum/atom_hud
 	var/list/atom/hudatoms = list() //list of all atoms which display this hud
-	var/list/mob/hudusers = list() //list with all mobs who can see the hud
+	var/list/hudusers = list() //list with all mobs who can see the hud
 	var/list/hud_icons = list() //these will be the indexes for the atom's hud_list
 
 	var/list/next_time_allowed = list() //mobs associated with the next time this hud can be added to them
@@ -52,11 +56,14 @@ GLOBAL_LIST_INIT(huds, list(
 	GLOB.all_huds -= src
 	return ..()
 
-/datum/atom_hud/proc/remove_hud_from(mob/M)
+/datum/atom_hud/proc/remove_hud_from(mob/M, absolute = FALSE)
 	if(!M || !hudusers[M])
 		return
-	if (!--hudusers[M])
+	if (absolute || !--hudusers[M])
+		UnregisterSignal(M, COMSIG_PARENT_QDELETING)
 		hudusers -= M
+		if(next_time_allowed[M])
+			next_time_allowed -= M
 		if(queued_to_see[M])
 			queued_to_see -= M
 		else
@@ -72,7 +79,7 @@ GLOBAL_LIST_INIT(huds, list(
 	return TRUE
 
 /datum/atom_hud/proc/remove_from_single_hud(mob/M, atom/A) //unsafe, no sanity apart from client
-	if(!M || !M.client || !A)
+	if(!M || !M.client || !A?.hud_list.len)
 		return
 	for(var/i in hud_icons)
 		M.client.images -= A.hud_list[i]
@@ -82,6 +89,7 @@ GLOBAL_LIST_INIT(huds, list(
 		return
 	if(!hudusers[M])
 		hudusers[M] = 1
+		RegisterSignal(M, COMSIG_PARENT_QDELETING, .proc/unregister_mob)
 		if(next_time_allowed[M] > world.time)
 			if(!queued_to_see[M])
 				addtimer(CALLBACK(src, .proc/show_hud_images_after_cooldown, M), next_time_allowed[M] - world.time)
@@ -92,6 +100,12 @@ GLOBAL_LIST_INIT(huds, list(
 				add_to_single_hud(M, A)
 	else
 		hudusers[M]++
+
+/datum/atom_hud/proc/unregister_mob(datum/source, force)
+	SIGNAL_HANDLER
+
+	remove_hud_from(source, TRUE)
+	remove_from_hud(source)
 
 /datum/atom_hud/proc/show_hud_images_after_cooldown(M)
 	if(queued_to_see[M])

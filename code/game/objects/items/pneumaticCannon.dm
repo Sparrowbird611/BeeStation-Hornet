@@ -13,7 +13,7 @@
 	item_state = "bulldog"
 	lefthand_file = 'icons/mob/inhands/weapons/guns_lefthand.dmi'
 	righthand_file = 'icons/mob/inhands/weapons/guns_righthand.dmi'
-	armor = list("melee" = 0, "bullet" = 0, "laser" = 0, "energy" = 0, "bomb" = 0, "bio" = 0, "rad" = 0, "fire" = 60, "acid" = 50)
+	armor = list("melee" = 0, "bullet" = 0, "laser" = 0, "energy" = 0, "bomb" = 0, "bio" = 0, "rad" = 0, "fire" = 60, "acid" = 50, "stamina" = 0)
 	var/maxWeightClass = 20 //The max weight of items that can fit into the cannon
 	var/loadedWeightClass = 0 //The weight of items currently in the cannon
 	var/obj/item/tank/internals/tank = null //The gas tank that is drawn from to fire things
@@ -159,8 +159,7 @@
 		if(prob(10))
 			target = get_turf(user)
 		else
-			var/list/possible_targets = range(3,src)
-			target = pick(possible_targets)
+			target = pick(RANGE_TURFS(3,src))
 		discharge = 1
 	if(!discharge)
 		user.visible_message("<span class='danger'>[user] fires \the [src]!</span>", \
@@ -169,6 +168,7 @@
 	var/turf/T = get_target(target, get_turf(src))
 	playsound(src, fire_sound, 50, 1)
 	fire_items(T, user)
+	user.changeNext_move(CLICK_CD_MELEE)
 	if(pressureSetting >= 3 && iscarbon(user))
 		var/mob/living/carbon/C = user
 		C.visible_message("<span class='warning'>[C] is thrown down by the force of the cannon!</span>", "<span class='userdanger'>[src] slams into your shoulder, knocking you down!")
@@ -226,6 +226,7 @@
 	w_class = WEIGHT_CLASS_NORMAL
 	maxWeightClass = 7
 	gasPerThrow = 5
+	fire_mode = PCANNON_FIFO
 
 /obj/item/pneumatic_cannon/proc/updateTank(obj/item/tank/internals/thetank, removing = 0, mob/living/carbon/human/user)
 	if(removing)
@@ -287,6 +288,11 @@
 	charge_type = /obj/item/reagent_containers/food/snacks/pie/cream
 	maxWeightClass = 60	//20 pies.
 
+/obj/item/pneumatic_cannon/pie/selfcharge/compact
+	name = "honkinator-4 compact pie cannon"
+	desc = "A compact, self loading pie cannon for tactical pranking action."
+	w_class = WEIGHT_CLASS_NORMAL
+
 /obj/item/pneumatic_cannon/pie/selfcharge/cyborg
 	name = "low velocity pie cannon"
 	automatic = FALSE
@@ -295,8 +301,8 @@
 	charge_ticks = 2		//4 second/pie
 
 /obj/item/pneumatic_cannon/speargun
-	name = "kinetic speargun"
-	desc = "A weapon favored by carp hunters. Fires specialized spears using kinetic energy."
+	name = "magnetic speargun"
+	desc = "A weapon favored by carp hunters. Fires specialized spears using magnetic energy. A savvy- or desperate- hunter may be able to find more esoteric payloads"
 	icon = 'icons/obj/guns/projectile.dmi'
 	icon_state = "speargun"
 	item_state = "speargun"
@@ -305,11 +311,12 @@
 	fire_sound = 'sound/weapons/grenadelaunch.ogg'
 	gasPerThrow = 0
 	checktank = FALSE
+	pressureSetting = 2
 	range_multiplier = 3
 	throw_amount = 1
-	maxWeightClass = 2 //a single magspear
+	maxWeightClass = 4 //a single magspear or spear
 	spin_item = FALSE
-	var/static/list/magspear_typecache = typecacheof(/obj/item/throwing_star/magspear)
+	var/static/list/magspear_typecache = typecacheof(list(/obj/item/throwing_star/magspear, /obj/item/spear, /obj/item/stack/rods/fifty, /obj/item/stack/rods, /obj/item/stack/rods/twentyfive, /obj/item/stack/rods/ten, /obj/item/katana, /obj/item/katana/cursed, /obj/item/toy/katana, /obj/item/spear/explosive, /obj/item/clockwork/weapon/brass_spear))
 
 /obj/item/pneumatic_cannon/speargun/Initialize()
 	. = ..()
@@ -324,13 +331,13 @@
 /obj/item/storage/backpack/magspear_quiver/ComponentInitialize()
 	. = ..()
 	var/datum/component/storage/STR = GetComponent(/datum/component/storage)
-	STR.max_items = 20
-	STR.max_combined_w_class = 40
+	STR.max_items = 30
+	STR.max_combined_w_class = 120
 	STR.display_numerical_stacking = TRUE
 	STR.can_hold = typecacheof(list(
 		/obj/item/throwing_star/magspear
 		))
 
 /obj/item/storage/backpack/magspear_quiver/PopulateContents()
-	for(var/i in 1 to 20)
+	for(var/i in 1 to 30)
 		new /obj/item/throwing_star/magspear(src)

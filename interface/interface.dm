@@ -6,7 +6,7 @@
 	var/wikiurl = CONFIG_GET(string/wikiurl)
 	if(wikiurl)
 		if(query)
-			var/output = wikiurl + "/index.php?title=Special%3ASearch&profile=default&search=" + query
+			var/output = wikiurl + "/Special:Search/" + query
 			src << link(output)
 		else if (query != null)
 			src << link(wikiurl)
@@ -65,12 +65,13 @@
 			message += GLOB.revdata.GetTestMergeInfo(FALSE)
 		if(tgalert(src, message, "Report Issue","Yes","No")!="Yes")
 			return
-		var/static/issue_template = file2text(".github/ISSUE_TEMPLATE.md")
+		var/static/issue_template = rustg_file_read(".github/ISSUE_TEMPLATE.md")
 		var/servername = CONFIG_GET(string/servername)
 		var/url_params = "Reporting client version: [byond_version].[byond_build]\n\n[issue_template]"
 		if(GLOB.round_id || servername)
 			url_params = "Issue reported from [GLOB.round_id ? " Round ID: [GLOB.round_id][servername ? " ([servername])" : ""]" : servername]\n\n[url_params]"
-		DIRECT_OUTPUT(src, link("[githuburl]/issues/new?body=[url_encode(url_params)]"))
+		var/issue_label = CONFIG_GET(string/issue_label)
+		DIRECT_OUTPUT(src, link("[githuburl]/issues/new?body=[rustg_url_encode(url_params)][issue_label ? "&labels=[rustg_url_encode(issue_label)]" : ""]"))
 	else
 		to_chat(src, "<span class='danger'>The Github URL is not set in the server configuration.</span>")
 	return
@@ -97,9 +98,9 @@ Admin:
 /client/verb/changelog()
 	set name = "Changelog"
 	set category = "OOC"
-	var/datum/asset/changelog = get_asset_datum(/datum/asset/simple/changelog)
+	var/datum/asset/simple/namespaced/changelog = get_asset_datum(/datum/asset/simple/namespaced/changelog)
 	changelog.send(src)
-	src << browse('html/changelog.html', "window=changes;size=675x650")
+	src << browse(changelog.get_htmlloader("changelog.html"), "window=changes;size=675x650")
 	if(prefs.lastchangelog != GLOB.changelog_hash)
 		prefs.lastchangelog = GLOB.changelog_hash
 		prefs.save_preferences()
@@ -231,7 +232,7 @@ Any-Mode: (hotkey doesn't need to be on)
 	set hidden = 1
 	var/donateurl = CONFIG_GET(string/donateurl)
 	if(donateurl)
-		if(alert("This will open the Doantion page in your browser. Are you sure?",,"Yes","No")!="Yes")
+		if(alert("This will open the Donation page in your browser. Are you sure?",,"Yes","No")!="Yes")
 			return
 		src << link(donateurl)
 	else
@@ -251,21 +252,15 @@ Any-Mode: (hotkey doesn't need to be on)
 		to_chat(src, "<span class='danger'>The Discord invite is not set in the server configuration.</span>")
 	return
 
-/client/verb/map() // i couldn't be fucked to config-ize this
-	set name = "map"
+/client/verb/map()
+	set name = "View Webmap"
 	set desc = "View the current map in the webviewer"
-	set hidden = 1
-	var/map_in_url
-	switch(SSmapping.config?.map_name)
-		if("Box Station")			map_in_url = "box"
-		if("Delta Station")			map_in_url = "delta"
-		if("Donutstation")			map_in_url = "donut"
-		if("MetaStation")			map_in_url = "meta"
-		if("Kilo Station")          map_in_url = "kilo"
-		if("PubbyStation")          map_in_url = "pubby"
-	if(map_in_url)
+	set category = "OOC"
+	if(SSmapping.config.map_link == "None")
+		to_chat(src,"<span class='danger'>The current map does not have a webmap. </span>")
+	else if(SSmapping.config.map_link)
 		if(alert("This will open the current map in your browser. Are you sure?",,"Yes","No")!="Yes")
 			return
-		src << link("http://beestation13.com/map/[map_in_url]")
+		src << link("https://affectedarc07.github.io/SS13WebMap/BeeStation/[SSmapping.config.map_link]")
 	else
-		to_chat(src, "<span class='danger'>The current map is either invalid or unavailable.</span>")
+		to_chat(src, "<span class='danger'>The current map is either invalid or unavailable. Open an issue on the github. </span>")

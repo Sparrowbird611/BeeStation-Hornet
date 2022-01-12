@@ -83,6 +83,7 @@
 	icon_state = "angel"
 	filling_color = "#C0C0C0"
 	wine_power = 60
+	discovery_points = 300
 
 // Liberty Cap
 /obj/item/seeds/liberty
@@ -159,14 +160,14 @@
 	icon_state = "walkingmushroom"
 	filling_color = "#9370DB"
 	can_distill = FALSE
+	discovery_points = 300
 
 /obj/item/reagent_containers/food/snacks/grown/mushroom/walkingmushroom/attack_self(mob/user)
 	if(isspaceturf(user.loc))
 		return
 	var/mob/living/simple_animal/hostile/mushroom/M = new /mob/living/simple_animal/hostile/mushroom(user.loc)
 	M.maxHealth += round(seed.endurance / 4)
-	M.melee_damage_lower += round(seed.potency / 20)
-	M.melee_damage_upper += round(seed.potency / 20)
+	M.melee_damage += round(seed.potency / 20)
 	M.move_to_delay -= round(seed.production / 50)
 	M.health = M.maxHealth
 	qdel(src)
@@ -191,6 +192,7 @@
 	genes = list(/datum/plant_gene/trait/plant_type/fungal_metabolism)
 	growing_icon = 'icons/obj/hydroponics/growing_mushrooms.dmi'
 	reagents_add = list(/datum/reagent/consumable/nutriment = 0.1)
+	mutatelist = list(/obj/item/seeds/chanterelle/jupitercup)
 
 /obj/item/reagent_containers/food/snacks/grown/mushroom/chanterelle
 	seed = /obj/item/seeds/chanter
@@ -199,6 +201,36 @@
 	icon_state = "chanterelle"
 	filling_color = "#FFA500"
 
+//Jupiter Cup
+/obj/item/seeds/chanterelle/jupitercup
+	name = "pack of jupiter cup mycelium"
+	desc = "This mycelium grows into jupiter cups. Zeus would be envious at the power at your fingertips."
+	icon_state = "mycelium-jupitercup"
+	species = "jupitercup"
+	plantname = "Jupiter Cups"
+	product = /obj/item/reagent_containers/food/snacks/grown/mushroom/jupitercup
+	lifespan = 40
+	production = 4
+	endurance = 8
+	yield = 4
+	growthstages = 2
+	genes = list(/datum/plant_gene/trait/plant_type/fungal_metabolism, /datum/plant_gene/reagent/liquidelectricity, /datum/plant_gene/trait/plant_type/carnivory)
+	growing_icon = 'icons/obj/hydroponics/growing_mushrooms.dmi'
+	reagents_add = list(/datum/reagent/consumable/nutriment = 0.1)
+
+/obj/item/seeds/chanterelle/jupitercup/Initialize(mapload,nogenes)
+	. = ..()
+	if(!nogenes)
+		unset_mutability(/datum/plant_gene/reagent/liquidelectricity, PLANT_GENE_EXTRACTABLE)
+		unset_mutability(/datum/plant_gene/trait/plant_type/carnivory, PLANT_GENE_REMOVABLE)
+
+/obj/item/reagent_containers/food/snacks/grown/mushroom/jupitercup
+	seed = /obj/item/seeds/chanterelle/jupitercup
+	name = "jupiter cup"
+	desc = "A strange red mushroom, its surface is moist and slick. You wonder how many tiny worms have met their fate inside."
+	icon_state = "jupitercup"
+	filling_color = "#B5003D"
+	discovery_points = 300
 
 // Glowshroom
 /obj/item/seeds/glowshroom
@@ -229,6 +261,7 @@
 	filling_color = "#00FA9A"
 	var/effect_path = /obj/structure/glowshroom
 	wine_power = 50
+	discovery_points = 300
 
 /obj/item/reagent_containers/food/snacks/grown/mushroom/glowshroom/attack_self(mob/user)
 	if(isspaceturf(user.loc))
@@ -275,7 +308,7 @@
 	filling_color = "#00FA9A"
 	effect_path = /obj/structure/glowshroom/glowcap
 	tastes = list("glowcap" = 1)
-
+	discovery_points = 300
 
 //Shadowshroom
 /obj/item/seeds/glowshroom/shadowshroom
@@ -300,6 +333,7 @@
 	effect_path = /obj/structure/glowshroom/shadowshroom
 	tastes = list("shadow" = 1, "mushroom" = 1)
 	wine_power = 60
+	discovery_points = 300
 
 /obj/item/reagent_containers/food/snacks/grown/mushroom/glowshroom/shadowshroom/attack_self(mob/user)
 	. = ..()

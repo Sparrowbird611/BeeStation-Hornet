@@ -189,7 +189,7 @@
 		if(world.time > last_event+15)
 			active = 1
 			radiation_pulse(src, 150)
-			for(var/turf/closed/wall/mineral/uranium/T in orange(1,src))
+			for(var/turf/closed/wall/mineral/uranium/T in (RANGE_TURFS(1,src)-src))
 				T.radiate()
 			last_event = world.time
 			active = null
@@ -292,6 +292,15 @@
 	walltype = /turf/closed/wall/mineral/wood
 	canSmoothWith = list(/obj/structure/falsewall/wood, /turf/closed/wall/mineral/wood)
 
+/obj/structure/falsewall/bamboo
+	name = "bamboo wall"
+	desc = "A wall with bamboo finish. Zen."
+	icon = 'icons/turf/walls/bamboo_wall.dmi'
+	icon_state = "bamboo"
+	mineral = /obj/item/stack/sheet/mineral/bamboo
+	walltype = /turf/closed/wall/mineral/bamboo
+	canSmoothWith = list(/obj/structure/falsewall/bamboo, /turf/closed/wall/mineral/bamboo)
+
 /obj/structure/falsewall/iron
 	name = "rough iron wall"
 	desc = "A wall with rough iron plating."
@@ -339,7 +348,7 @@
 	resistance_flags = FIRE_PROOF | ACID_PROOF
 	mineral_amount = 1
 	canSmoothWith = list(/obj/effect/clockwork/overlay/wall, /obj/structure/falsewall/brass)
-	girder_type = /obj/structure/destructible/clockwork/wall_gear/displaced
+	girder_type = /obj/structure/girder/bronze
 	walltype = /turf/closed/wall/clockwork
 	mineral = /obj/item/stack/tile/brass
 
@@ -348,12 +357,6 @@
 	var/turf/T = get_turf(src)
 	new /obj/effect/temp_visual/ratvar/wall/false(T)
 	new /obj/effect/temp_visual/ratvar/beam/falsewall(T)
-	change_construction_value(4)
 
 /obj/structure/falsewall/brass/Destroy()
-	change_construction_value(-4)
 	return ..()
-
-/obj/structure/falsewall/brass/ratvar_act()
-	if(GLOB.ratvar_awakens)
-		obj_integrity = max_integrity

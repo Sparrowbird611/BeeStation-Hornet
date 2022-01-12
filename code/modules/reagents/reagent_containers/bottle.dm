@@ -20,6 +20,21 @@
 	desc = "A small bottle. Contains epinephrine - used to stabilize patients."
 	list_reagents = list(/datum/reagent/medicine/epinephrine = 30)
 
+/obj/item/reagent_containers/glass/bottle/tricordrazine
+	name = "tricordrazine bottle"
+	desc = "A small bottle of tricordrazine. Used to aid in patient recovery."
+	list_reagents = list(/datum/reagent/medicine/tricordrazine = 30)
+
+/obj/item/reagent_containers/glass/bottle/spaceacillin
+	name = "spaceacillin bottle"
+	desc = "A small bottle of spaceacillin. Used to cure some diseases."
+	list_reagents = list(/datum/reagent/medicine/spaceacillin = 30)
+
+/obj/item/reagent_containers/glass/bottle/antitoxin
+	name = "antitoxin bottle"
+	desc = "A small bottle of anti-toxin. Used to treat toxin damage."
+	list_reagents = list(/datum/reagent/medicine/antitoxin = 30)
+
 /obj/item/reagent_containers/glass/bottle/toxin
 	name = "toxin bottle"
 	desc = "A small bottle of toxins. Do not drink, it is poisonous."
@@ -45,7 +60,7 @@
 	name = "chloral hydrate bottle"
 	desc = "A small bottle of Choral Hydrate. Mickey's Favorite!"
 	icon_state = "bottle20"
-	list_reagents = list(/datum/reagent/toxin/chloralhydrate = 15)
+	list_reagents = list(/datum/reagent/toxin/chloralhydrate = 30)
 
 /obj/item/reagent_containers/glass/bottle/mannitol
 	name = "mannitol bottle"
@@ -77,6 +92,11 @@
 	desc = "A small bottle of formaldehyde."
 	list_reagents = list(/datum/reagent/toxin/formaldehyde = 30)
 
+/obj/item/reagent_containers/glass/bottle/cryostylane
+	name = "cryostylane bottle"
+	desc = "A small bottle of cryostylane. It feels cold to the touch."
+	list_reagents = list(/datum/reagent/cryostylane = 30)
+
 /obj/item/reagent_containers/glass/bottle/ammonia
 	name = "ammonia bottle"
 	desc = "A small bottle of ammonia."
@@ -99,10 +119,10 @@
 	icon_state = "holyflask"
 	list_reagents = list(/datum/reagent/medicine/adminordrazine = 30)
 
-/obj/item/reagent_containers/glass/bottle/adminvirusfood
-	name = "Highly Unstable Virus Food Bottle"
-	desc = "A small bottle. Contains a small amount of highly experimental virus food. This is rare, so don't expect any more of it."
-	list_reagents = list(/datum/reagent/medicine/adminordrazine/adminvirusfood = 1)
+/obj/item/reagent_containers/glass/bottle/viralbase
+	name = "Highly potent Viral Base Bottle"
+	desc = "A small bottle. Contains a trace amount of a substance found by scientists that can be used to create extremely advanced diseases once exposed to uranium."
+	list_reagents = list(/datum/reagent/consumable/virus_food/viralbase = 1)
 
 /obj/item/reagent_containers/glass/bottle/capsaicin
 	name = "Capsaicin Bottle"
@@ -196,9 +216,8 @@
 	list_reagents = list(/datum/reagent/medicine/potass_iodide = 30)
 
 /obj/item/reagent_containers/glass/bottle/salglu_solution
-	name = "saline-glucose solution bottle"
-	desc = "A small bottle of saline-glucose solution."
-	icon_state = "bottle1"
+	name = "saline-glucose bottle"
+	desc = "A small bottle of saline-glucose solution. Useful for patients lacking in blood volume."
 	list_reagents = list(/datum/reagent/medicine/salglu_solution = 30)
 
 /obj/item/reagent_containers/glass/bottle/atropine
@@ -287,6 +306,17 @@
 	name = "BVAK bottle"
 	desc = "A small bottle containing Bio Virus Antidote Kit."
 	list_reagents = list(/datum/reagent/medicine/atropine = 5, /datum/reagent/medicine/epinephrine = 5, /datum/reagent/medicine/salbutamol = 10, /datum/reagent/medicine/spaceacillin = 10)
+
+/obj/item/reagent_containers/glass/bottle/necropolis_seed
+	name = "bowl of blood"
+	desc = "A clay bowl containing a fledgling Necropolis, preserved in blood. A robust virologist may be able to unlock its full potential..."
+	icon_state = "mortar"
+	spawned_disease = /datum/disease/advance/random/necropolis
+
+/obj/item/reagent_containers/glass/bottle/felinid
+	name = "Nano-Feline Assimilative Toxoplasmosis culture bottle"
+	desc = "A small bottle. Contains a sample of nano-feline toxoplasma in synthblood medium."
+	spawned_disease = /datum/disease/transformation/felinid/contagious
 
 //Oldstation.dmm chemical storage bottles
 

@@ -19,6 +19,8 @@
 	var/minimum_range = 0 //at what range the pinpointer declares you to be at your destination
 	var/ignore_suit_sensor_level = FALSE // Do we find people even if their suit sensors are turned off
 	var/alert = FALSE // TRUE to display things more seriously
+	var/process_scan = TRUE // some pinpointers change target every time they scan, which means we can't have it change very process but instead when it turns on.
+	var/icon_suffix = "" // for special pinpointer icons
 
 /obj/item/pinpointer/Initialize()
 	. = ..()
@@ -31,6 +33,8 @@
 	return ..()
 
 /obj/item/pinpointer/attack_self(mob/living/user)
+	if(!process_scan) //since it's not scanning on process, it scans here.
+		scan_for_target()
 	toggle_on()
 	user.visible_message("<span class='notice'>[user] [active ? "" : "de"]activates [user.p_their()] pinpointer.</span>", "<span class='notice'>You [active ? "" : "de"]activate your pinpointer.</span>")
 
@@ -47,7 +51,8 @@
 /obj/item/pinpointer/process()
 	if(!active)
 		return PROCESS_KILL
-	scan_for_target()
+	if(process_scan)
+		scan_for_target()
 	update_icon()
 
 /obj/item/pinpointer/proc/scan_for_target()
@@ -58,24 +63,28 @@
 	if(!active)
 		return
 	if(!target)
-		add_overlay("pinon[alert ? "alert" : ""]null")
+		add_overlay("pinon[alert ? "alert" : ""]null[icon_suffix]")
 		return
 	var/turf/here = get_turf(src)
 	var/turf/there = get_turf(target)
-	if(here.z != there.z)
-		add_overlay("pinon[alert ? "alert" : ""]null")
+
+	if(here.get_virtual_z_level() != there.get_virtual_z_level())
+		if(here.get_virtual_z_level() > there.get_virtual_z_level())
+			add_overlay("pinon_below[icon_suffix]")
+		else
+			add_overlay("pinon_above[icon_suffix]")
 		return
 	if(get_dist_euclidian(here,there) <= minimum_range)
-		add_overlay("pinon[alert ? "alert" : ""]direct")
+		add_overlay("pinon[alert ? "alert" : ""]direct[icon_suffix]")
 	else
 		setDir(get_dir(here, there))
 		switch(get_dist(here, there))
 			if(1 to 8)
-				add_overlay("pinon[alert ? "alert" : "close"]")
+				add_overlay("pinon[alert ? "alert" : "close"][icon_suffix]")
 			if(9 to 16)
-				add_overlay("pinon[alert ? "alert" : "medium"]")
+				add_overlay("pinon[alert ? "alert" : "medium"][icon_suffix]")
 			if(16 to INFINITY)
-				add_overlay("pinon[alert ? "alert" : "far"]")
+				add_overlay("pinon[alert ? "alert" : "far"][icon_suffix]")
 
 /obj/item/pinpointer/crew // A replacement for the old crew monitoring consoles
 	name = "crew pinpointer"
@@ -85,17 +94,27 @@
 	var/has_owner = FALSE
 	var/pinpointer_owner = null
 
+/obj/item/pinpointer/crew/examine(mob/user)
+	. = ..()
+	if(!active || !target)
+		return
+	. += "It is currently tracking <b>[target]</b>."
+
 /obj/item/pinpointer/crew/proc/trackable(mob/living/carbon/human/H)
 	var/turf/here = get_turf(src)
-	if((H.z == 0 || H.z == here.z) && istype(H.w_uniform, /obj/item/clothing/under))
+	if((H.z == 0 || H.get_virtual_z_level() == here.get_virtual_z_level() || (is_station_level(here.z) && is_station_level(H.z))) && istype(H.w_uniform, /obj/item/clothing/under))
 		var/obj/item/clothing/under/U = H.w_uniform
+
+		//Suit sensors radio transmitter must not be jammed.
+		if(U.is_jammed())
+			return FALSE
 
 		// Suit sensors must be on maximum.
 		if(!U.has_sensor || (U.sensor_mode < SENSOR_COORDS && !ignore_suit_sensor_level))
 			return FALSE
 
 		var/turf/there = get_turf(H)
-		return (H.z != 0 || (there && there.z == here.z))
+		return (H.z != 0 || (there && ((there.get_virtual_z_level() == here.get_virtual_z_level()) || (is_station_level(there.z) && is_station_level(here.z)))))
 
 	return FALSE
 
@@ -135,7 +154,7 @@
 		user.visible_message("<span class='notice'>[user]'s pinpointer fails to detect a signal.</span>", "<span class='notice'>Your pinpointer fails to detect a signal.</span>")
 		return
 
-	var/A = input(user, "Person to track", "Pinpoint") in names
+	var/A = input(user, "Person to track", "Pinpoint") in sortList(names)
 	if(!A || QDELETED(src) || !user || !user.is_holding(src) || user.incapacitated())
 		return
 
@@ -183,3 +202,21 @@
 
 	A.other_pair = B
 	B.other_pair = A
+
+/obj/item/pinpointer/shuttle
+	name = "fugitive pinpointer"
+	desc = "A handheld tracking device that locates the bounty hunter shuttle for quick escapes."
+	icon_state = "pinpointer_hunter"
+	icon_suffix = "_hunter"
+	var/obj/shuttleport
+
+/obj/item/pinpointer/shuttle/Initialize(mapload)
+	. = ..()
+	shuttleport = SSshuttle.getShuttle("huntership")
+
+/obj/item/pinpointer/shuttle/scan_for_target()
+	target = shuttleport
+
+/obj/item/pinpointer/shuttle/Destroy()
+	shuttleport = null
+	. = ..()

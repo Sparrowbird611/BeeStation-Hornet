@@ -9,9 +9,11 @@ GLOBAL_VAR_INIT(hsboxspawn, TRUE)
 	sandbox.owner = src.ckey
 	if(src.client.holder)
 		sandbox.admin = 1
-	verbs += new/mob/proc/sandbox_panel
+
+	add_verb(/mob/proc/sandbox_panel)
 /mob/proc/sandbox_panel()
 	set name = "Sandbox Panel"
+	set category = "Sandbox"
 	if(sandbox)
 		sandbox.update()
 
@@ -25,14 +27,14 @@ GLOBAL_VAR_INIT(hsboxspawn, TRUE)
 	var/canisterinfo = null
 	var/hsbinfo = null
 	//items that shouldn't spawn on the floor because they would bug or act weird
-	var/global/list/spawn_forbidden = list(
+	var/static/list/spawn_forbidden = list(
 		/obj/item/tk_grab, /obj/item/implant, // not implanter, the actual thing that is inside you
 		/obj/item/assembly, /obj/item/onetankbomb, /obj/item/pda/ai,
 		/obj/item/smallDelivery, /obj/item/projectile,
 		/obj/item/borg/sight, /obj/item/borg/stun, /obj/item/robot_module)
 
 /datum/hSB/proc/update()
-	var/global/list/hrefs = list(
+	var/static/list/hrefs = list(
 			"Space Gear",
 			"Suit Up (Space Travel Gear)"		= "hsbsuit",
 			"Spawn Gas Mask"					= "hsbspawn&path=[/obj/item/clothing/mask/gas]",
@@ -41,6 +43,8 @@ GLOBAL_VAR_INIT(hsboxspawn, TRUE)
 			"Standard Tools",
 			"Spawn Flashlight"					= "hsbspawn&path=[/obj/item/flashlight]",
 			"Spawn Toolbox"						= "hsbspawn&path=[/obj/item/storage/toolbox/mechanical]",
+			"Spawn Tier 4 BSRPED"				= "hsbspawn&path=[/obj/item/storage/part_replacer/bluespace/tier4]",
+			"Spawn Toolbelt"					= "hsbspawn&path=[/obj/item/storage/belt/utility/chief/full]",
 			"Spawn Light Replacer"				= "hsbspawn&path=[/obj/item/lightreplacer]",
 			"Spawn Medical Kit"					= "hsbspawn&path=[/obj/item/storage/firstaid/regular]",
 			"Spawn All-Access ID"				= "hsbaaid",
@@ -56,11 +60,11 @@ GLOBAL_VAR_INIT(hsboxspawn, TRUE)
 			"Spawn Inf. Capacity Power Cell"	= "hsbspawn&path=[/obj/item/stock_parts/cell/infinite]",
 			"Spawn Rapid Construction Device"	= "hsbrcd",
 			"Spawn RCD Ammo"					= "hsb_safespawn&path=[/obj/item/rcd_ammo]",
-			"Spawn Airlock"						= "hsbairlock",
 
 			"Miscellaneous",
 			"Spawn Air Scrubber"				= "hsbscrubber",
-			"Spawn Welding Fuel Tank"			= "hsbspawn&path=[/obj/structure/reagent_dispensers/fueltank]",
+			"Spawn Debug Tech Disk"				= "hsbspawn&path=[/obj/item/disk/tech_disk/debug]",
+			"Spawn All Materials"				= "hsbspawn&path=[/obj/structure/closet/syndicate/resources/everything]",
 			"Spawn Water Tank"					= "hsbspawn&path=[/obj/structure/reagent_dispensers/watertank]",
 
 			"Bots",
@@ -219,12 +223,6 @@ GLOBAL_VAR_INIT(hsboxspawn, TRUE)
 				if(!GLOB.hsboxspawn) return
 
 				new/obj/item/construction/rcd/combat(usr.loc)
-
-			//
-			// New sandbox airlock maker
-			//
-			if("hsbairlock")
-				new /datum/airlock_maker(usr.loc)
 
 			//
 			// Object spawn window

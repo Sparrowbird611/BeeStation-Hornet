@@ -17,16 +17,17 @@
 	name = "welding helmet"
 	desc = "A head-mounted face cover designed to protect the wearer completely from space-arc eye."
 	icon_state = "welding"
-	flags_cover = HEADCOVERSEYES | HEADCOVERSMOUTH 
+	clothing_flags = SNUG_FIT
+	flags_cover = HEADCOVERSEYES | HEADCOVERSMOUTH
 	item_state = "welding"
 	materials = list(/datum/material/iron=1750, /datum/material/glass=400)
 	flash_protect = 2
 	tint = 2
-	armor = list("melee" = 10, "bullet" = 0, "laser" = 0,"energy" = 0, "bomb" = 0, "bio" = 0, "rad" = 0, "fire" = 100, "acid" = 60)
+	armor = list("melee" = 10, "bullet" = 0, "laser" = 0,"energy" = 0, "bomb" = 0, "bio" = 0, "rad" = 0, "fire" = 100, "acid" = 60, "stamina" = 5)
 	flags_inv = HIDEMASK|HIDEEARS|HIDEEYES|HIDEFACE
 	actions_types = list(/datum/action/item_action/toggle)
 	visor_flags_inv = HIDEMASK|HIDEEARS|HIDEEYES|HIDEFACE
-	visor_flags_cover = HEADCOVERSEYES | HEADCOVERSMOUTH | PEPPERPROOF
+	visor_flags_cover = HEADCOVERSEYES | HEADCOVERSMOUTH
 	resistance_flags = FIRE_PROOF
 
 /obj/item/clothing/head/welding/attack_self(mob/user)
@@ -47,12 +48,12 @@
 	hitsound = 'sound/weapons/tap.ogg'
 	var/hitsound_on = 'sound/weapons/sear.ogg' //so we can differentiate between cakehat and energyhat
 	var/hitsound_off = 'sound/weapons/tap.ogg'
-	var/force_on = 15
-	var/throwforce_on = 15
+	var/force_on = 12
+	var/throwforce_on = 12
 	var/damtype_on = BURN
 	flags_inv = HIDEEARS|HIDEHAIR
-	armor = list("melee" = 0, "bullet" = 0, "laser" = 0,"energy" = 0, "bomb" = 0, "bio" = 0, "rad" = 0, "fire" = 0, "acid" = 0)
-	brightness_on = 2 //luminosity when on
+	armor = list("melee" = 0, "bullet" = 0, "laser" = 0,"energy" = 0, "bomb" = 0, "bio" = 0, "rad" = 0, "fire" = 0, "acid" = 0, "stamina" = 0)
+	light_range = 2 //luminosity when on
 	flags_cover = HEADCOVERSEYES
 	heat = 999
 
@@ -98,7 +99,7 @@
 	hitsound_off = 'sound/weapons/tap.ogg'
 	damtype_on = BRUTE
 	force_on = 18 //same as epen (but much more obvious)
-	brightness_on = 3
+	light_range = 3 //ditto
 	heat = 0
 
 /obj/item/clothing/head/hardhat/cakehat/energycake/turn_on(mob/living/user)
@@ -122,7 +123,6 @@
 	var/earflaps = 1
 	cold_protection = HEAD
 	min_cold_protection_temperature = FIRE_HELM_MIN_TEMP_PROTECT
-
 	dog_fashion = /datum/dog_fashion/head/ushanka
 
 /obj/item/clothing/head/ushanka/attack_self(mob/user)
@@ -147,8 +147,9 @@
 	item_state = "hardhat0_pumpkin"
 	item_color = "pumpkin"
 	flags_inv = HIDEMASK|HIDEEARS|HIDEEYES|HIDEFACE|HIDEHAIR|HIDEFACIALHAIR
-	armor = list("melee" = 0, "bullet" = 0, "laser" = 0,"energy" = 0, "bomb" = 0, "bio" = 0, "rad" = 0, "fire" = 0, "acid" = 0)
-	brightness_on = 2 //luminosity when on
+	clothing_flags = SNUG_FIT
+	armor = list("melee" = 0, "bullet" = 0, "laser" = 0,"energy" = 0, "bomb" = 0, "bio" = 0, "rad" = 0, "fire" = 0, "acid" = 0, "stamina" = 10)
+	light_range = 2 //luminosity when on
 	flags_cover = HEADCOVERSEYES
 
 /*
@@ -158,43 +159,56 @@
 	name = "kitty ears"
 	desc = "A pair of kitty ears. Meow!"
 	icon_state = "kitty"
+	clothing_flags = SNUG_FIT
 	color = "#999999"
 	dynamic_hair_suffix = ""
 
 	dog_fashion = /datum/dog_fashion/head/kitty
 
-/obj/item/clothing/head/kitty/equipped(mob/living/carbon/human/user, slot)
-	if(ishuman(user) && slot == SLOT_HEAD)
-		update_icon(user)
-		user.update_inv_head() //Color might have been changed by update_icon.
-	..()
-
-/obj/item/clothing/head/kitty/update_icon(mob/living/carbon/human/user)
-	if(ishuman(user))
-		add_atom_colour("#[user.hair_color]", FIXED_COLOUR_PRIORITY)
+/obj/item/clothing/head/kitty/Initialize()
+	. = ..()
+	AddComponent(/datum/component/haircolor_clothing)
 
 /obj/item/clothing/head/kitty/genuine
 	desc = "A pair of kitty ears. A tag on the inside says \"Hand made from real cats.\""
 
-
 /obj/item/clothing/head/hardhat/reindeer
 	name = "novelty reindeer hat"
 	desc = "Some fake antlers and a very fake red nose."
+	clothing_flags = SNUG_FIT
 	icon_state = "hardhat0_reindeer"
 	item_state = "hardhat0_reindeer"
 	item_color = "reindeer"
 	flags_inv = 0
-	armor = list("melee" = 0, "bullet" = 0, "laser" = 0,"energy" = 0, "bomb" = 0, "bio" = 0, "rad" = 0, "fire" = 0, "acid" = 0)
-	brightness_on = 1 //luminosity when on
+	armor = list("melee" = 0, "bullet" = 0, "laser" = 0,"energy" = 0, "bomb" = 0, "bio" = 0, "rad" = 0, "fire" = 0, "acid" = 0, "stamina" = 0)
+	light_range = 1 //luminosity when on
 	dynamic_hair_suffix = ""
 
 	dog_fashion = /datum/dog_fashion/head/reindeer
+
+/*
+	Rabbit ears
+*/
+
+/obj/item/clothing/head/rabbitears
+	name = "rabbit ears"
+	desc = "Wearing these makes you look useless, and only good for your sex appeal."
+	icon_state = "bunny"
+	clothing_flags = SNUG_FIT
+	dynamic_hair_suffix = ""
+
+	dog_fashion = /datum/dog_fashion/head/rabbit
+
+/obj/item/clothing/head/rabbitears/Initialize()
+	. = ..()
+	AddComponent(/datum/component/haircolor_clothing)
 
 /obj/item/clothing/head/cardborg
 	name = "cardborg helmet"
 	desc = "A helmet made out of a box."
 	icon_state = "cardborg_h"
 	item_state = "cardborg_h"
+	clothing_flags = SNUG_FIT
 	flags_cover = HEADCOVERSEYES
 	flags_inv = HIDEMASK|HIDEEARS|HIDEEYES|HIDEFACE|HIDEHAIR|HIDEFACIALHAIR
 
@@ -202,7 +216,7 @@
 
 /obj/item/clothing/head/cardborg/equipped(mob/living/user, slot)
 	..()
-	if(ishuman(user) && slot == SLOT_HEAD)
+	if(ishuman(user) && slot == ITEM_SLOT_HEAD)
 		var/mob/living/carbon/human/H = user
 		if(istype(H.wear_suit, /obj/item/clothing/suit/cardborg))
 			var/obj/item/clothing/suit/cardborg/CB = H.wear_suit
@@ -217,7 +231,8 @@
 /obj/item/clothing/head/wig
 	name = "wig"
 	desc = "A bunch of hair without a head attached."
-	icon_state = ""
+	icon = 'icons/mob/human_face.dmi'	  // default icon for all hairs
+	icon_state = "hair_vlong"
 	item_state = "pwig"
 	flags_inv = HIDEHAIR
 	var/hair_style = "Very Long Hair"
@@ -278,8 +293,8 @@
 	. = ..()
 
 /obj/item/clothing/head/wig/natural/equipped(mob/living/carbon/human/user, slot)
-	if(ishuman(user) && slot == SLOT_HEAD)
-		hair_color = "#[user.hair_color]"
+	if(ishuman(user) && slot == ITEM_SLOT_HEAD)
+		color = "#[user.hair_color]"
 		update_icon()
 		user.update_inv_head()
 
@@ -289,20 +304,22 @@
 	icon = 'icons/obj/clothing/clockwork_garb.dmi'
 	icon_state = "clockwork_helmet_old"
 	flags_inv = HIDEEARS|HIDEHAIR
-	armor = list("melee" = 5, "bullet" = 0, "laser" = -5, "energy" = 0, "bomb" = 10, "bio" = 0, "rad" = 0, "fire" = 20, "acid" = 20)
+	armor = list("melee" = 5, "bullet" = 0, "laser" = -5, "energy" = 0, "bomb" = 10, "bio" = 0, "rad" = 0, "fire" = 20, "acid" = 20, "stamina" = 30)
 
 /obj/item/clothing/head/foilhat
 	name = "tinfoil hat"
 	desc = "Thought control rays, psychotronic scanning. Don't mind that, I'm protected cause I made this hat."
 	icon_state = "foilhat"
 	item_state = "foilhat"
-	armor = list("melee" = 0, "bullet" = 0, "laser" = -5,"energy" = 0, "bomb" = 0, "bio" = 0, "rad" = -5, "fire" = 0, "acid" = 0)
+	clothing_flags = EFFECT_HAT | SNUG_FIT
+	armor = list("melee" = 0, "bullet" = 0, "laser" = -5,"energy" = 0, "bomb" = 0, "bio" = 0, "rad" = -5, "fire" = 0, "acid" = 0, "stamina" = 50)
 	equip_delay_other = 140
 	var/datum/brain_trauma/mild/phobia/conspiracies/paranoia
 
 /obj/item/clothing/head/foilhat/equipped(mob/living/carbon/human/user, slot)
 	..()
-	if(slot == SLOT_HEAD)
+	if(slot == ITEM_SLOT_HEAD)
+		user.sec_hud_set_implants()
 		if(paranoia)
 			QDEL_NULL(paranoia)
 		paranoia = new()
@@ -324,6 +341,9 @@
 	..()
 	if(paranoia)
 		QDEL_NULL(paranoia)
+	if(isliving(user))
+		var/mob/living/L = user
+		L.sec_hud_set_implants()
 
 /obj/item/clothing/head/foilhat/attack_hand(mob/user)
 	if(iscarbon(user))
@@ -332,3 +352,63 @@
 			to_chat(user, "<span class='userdanger'>Why would you want to take this off? Do you want them to get into your mind?!</span>")
 			return
 	..()
+
+/obj/item/clothing/head/foilhat/plasmaman
+	name = "tinfoil envirosuit helmet"
+	desc = "The Syndicate is a hoax! Dogs are fake! Space Station 13 is just a money laundering operation! See the truth!"
+	icon_state = "tinfoil_envirohelm"
+	item_state = "tinfoil_envirohelm"
+	strip_delay = 150
+	clothing_flags = STOPSPRESSUREDAMAGE | THICKMATERIAL | SHOWEROKAY | EFFECT_HAT | SNUG_FIT
+	armor = list("melee" = 0, "bullet" = 0, "laser" = 0, "energy" = 0, "bomb" = 0, "bio" = 100, "rad" = 0, "fire" = 50, "acid" = 50, "stamina" = 50)
+	flags_inv = HIDEMASK|HIDEEARS|HIDEEYES|HIDEFACE|HIDEHAIR|HIDEFACIALHAIR
+	light_system = MOVABLE_LIGHT
+	light_range = 4
+	light_power = 1
+	light_on = TRUE
+	var/on = FALSE
+	actions_types = list(/datum/action/item_action/toggle_helmet_light)
+	dynamic_hair_suffix = ""
+	dynamic_fhair_suffix = ""
+	flash_protect = 2
+	flags_cover = HEADCOVERSEYES | HEADCOVERSMOUTH
+	bang_protect = 1 //make this consistent with other plasmaman helmets
+	resistance_flags = NONE
+	dog_fashion = null
+
+
+/obj/item/clothing/head/foilhat/plasmaman/attack_self(mob/user)
+	on = !on
+	icon_state = "[initial(icon_state)][on ? "-light":""]"
+	item_state = icon_state
+	user.update_inv_head() //So the mob overlay updates
+
+	if(on)
+		set_light(TRUE)
+	else
+		set_light(FALSE)
+
+	for(var/X in actions)
+		var/datum/action/A=X
+		A.UpdateButtonIcon()
+
+/obj/item/clothing/head/speedwagon
+	name = "hat of ultimate masculinity"
+	desc = "Even the mere act of wearing this makes you want to pose menacingly."
+	alternate_worn_icon = 'icons/mob/large-worn-icons/64x64/head.dmi'
+	icon_state = "speedwagon"
+	item_state = "speedwagon"
+	worn_x_dimension = 64
+	worn_y_dimension = 64
+
+/obj/item/clothing/head/speedwagon/cursed
+	name = "ULTIMATE HAT"
+	desc = "You feel weak and pathetic in comparison to this exceptionally beautiful hat."
+	icon_state = "speedwagon_cursed"
+	item_state = "speedwagon_cursed"
+
+/obj/item/clothing/head/franks_hat
+	name = "Frank's Hat"
+	desc = "You feel ashamed about what you had to do to get this hat"
+	icon_state = "cowboy"
+	item_state = "cowboy"

@@ -23,7 +23,6 @@
 
 	if(!comp || !istype(comp, /obj/machinery/modular_computer))
 		CRASH("Inapropriate type passed to obj/item/modular_computer/processor/New()! Aborting.")
-		return
 	// Obtain reference to machinery computer
 	all_components = list()
 	idle_threads = list()
@@ -59,23 +58,23 @@
 	machinery_computer.update_icon()
 	return
 
-/obj/item/modular_computer/processor/add_verb(path)
+/obj/item/modular_computer/processor/add_computer_verbs(path)
 	switch(path)
 		if(MC_CARD)
-			machinery_computer.verbs += /obj/machinery/modular_computer/proc/eject_id
+			machinery_computer.add_verb(/obj/machinery/modular_computer/proc/eject_id)
 		if(MC_SDD)
-			machinery_computer.verbs += /obj/machinery/modular_computer/proc/eject_disk
+			machinery_computer.add_verb(/obj/machinery/modular_computer/proc/eject_disk)
 		if(MC_AI)
-			machinery_computer.verbs += /obj/machinery/modular_computer/proc/eject_card
+			machinery_computer.add_verb(/obj/machinery/modular_computer/proc/eject_card)
 
-/obj/item/modular_computer/processor/remove_verb(path)
+/obj/item/modular_computer/processor/remove_computer_verbs(path)
 	switch(path)
 		if(MC_CARD)
-			machinery_computer.verbs -= /obj/machinery/modular_computer/proc/eject_id
+			machinery_computer.remove_verb(/obj/machinery/modular_computer/proc/eject_id)
 		if(MC_SDD)
-			machinery_computer.verbs -= /obj/machinery/modular_computer/proc/eject_disk
+			machinery_computer.remove_verb(/obj/machinery/modular_computer/proc/eject_disk)
 		if(MC_AI)
-			machinery_computer.verbs -= /obj/machinery/modular_computer/proc/eject_card
+			machinery_computer.remove_verb(/obj/machinery/modular_computer/proc/eject_card)
 
 /obj/item/modular_computer/processor/attack_ghost(mob/user)
 	ui_interact(user)

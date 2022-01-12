@@ -2,6 +2,38 @@
 //////////////MISC Boards///////////////
 ////////////////////////////////////////
 
+/datum/design/board/shuttle/engine/plasma
+	name = "Machine Design (Plasma Thruster Board)"
+	desc = "The circuit board for a plasma thruster."
+	id = "engine_plasma"
+	build_path = /obj/item/circuitboard/machine/shuttle/engine/plasma
+	category = list ("Shuttle Machinery")
+	departmental_flags = DEPARTMENTAL_FLAG_ENGINEERING | DEPARTMENTAL_FLAG_SCIENCE
+
+/datum/design/board/shuttle/engine/void
+	name = "Machine Design (Void Thruster Board)"
+	desc = "The circuit board for a void thruster."
+	id = "engine_void"
+	build_path = /obj/item/circuitboard/machine/shuttle/engine/void
+	category = list ("Shuttle Machinery")
+	departmental_flags = DEPARTMENTAL_FLAG_ENGINEERING | DEPARTMENTAL_FLAG_SCIENCE
+
+/datum/design/board/shuttle/engine/heater
+	name = "Machine Design (Engine Heater Board)"
+	desc = "The circuit board for an engine heater."
+	id = "engine_heater"
+	build_path = /obj/item/circuitboard/machine/shuttle/heater
+	category = list ("Shuttle Machinery")
+	departmental_flags = DEPARTMENTAL_FLAG_ENGINEERING | DEPARTMENTAL_FLAG_SCIENCE
+
+/datum/design/board/plasma_refiner
+	name = "Machine Design (Plasma Refiner Board)"
+	desc = "The circuit board for a plasma refiner."
+	id = "plasma_refiner"
+	build_path = /obj/item/circuitboard/machine/plasma_refiner
+	category = list ("Shuttle Machinery")
+	departmental_flags = DEPARTMENTAL_FLAG_ENGINEERING | DEPARTMENTAL_FLAG_SCIENCE
+
 /datum/design/board/smes
 	name = "Machine Design (SMES Board)"
 	desc = "The circuit board for a SMES."
@@ -67,8 +99,8 @@
 	departmental_flags = DEPARTMENTAL_FLAG_ENGINEERING | DEPARTMENTAL_FLAG_SCIENCE
 
 /datum/design/board/thermomachine
-	name = "Machine Design (Freezer/Heater Board)"
-	desc = "The circuit board for a freezer/heater."
+	name = "Machine Design (Thermomachine Board)"
+	desc = "The circuit board for a thermomachine."
 	id = "thermomachine"
 	build_path = /obj/item/circuitboard/machine/thermomachine
 	category = list ("Engineering Machinery")
@@ -81,6 +113,14 @@
 	build_path = /obj/item/circuitboard/machine/space_heater
 	category = list ("Engineering Machinery")
 	departmental_flags = ALL
+
+/datum/design/board/igniter
+	name = "Machine Design (Igniter)"
+	desc = "The circuit board for an igniter."
+	id = "machine_igniter"
+	build_path = /obj/item/circuitboard/machine/igniter
+	category = list ("Engineering Machinery")
+	departmental_flags = DEPARTMENTAL_FLAG_ENGINEERING
 
 /datum/design/board/teleport_station
 	name = "Machine Design (Teleportation Station Board)"
@@ -459,6 +499,14 @@
 	category = list ("Misc. Machinery")
 	departmental_flags = DEPARTMENTAL_FLAG_SCIENCE | DEPARTMENTAL_FLAG_CARGO
 
+/datum/design/board/exploration_equipment_vendor
+	name = "Machine Design (Exploration Rewards Vendor Board)"
+	desc = "The circuit board for an Exploration Rewards Vendor."
+	id = "exploration_equipment_vendor"
+	build_path = /obj/item/circuitboard/machine/exploration_equipment_vendor
+	category = list ("Misc. Machinery")
+	departmental_flags = DEPARTMENTAL_FLAG_SCIENCE | DEPARTMENTAL_FLAG_CARGO
+
 /datum/design/board/tesla_coil
 	name = "Machine Design (Tesla Coil Board)"
 	desc = "The circuit board for a tesla coil."
@@ -563,6 +611,14 @@
 	category = list ("Misc. Machinery")
 	departmental_flags = DEPARTMENTAL_FLAG_SCIENCE | DEPARTMENTAL_FLAG_CARGO | DEPARTMENTAL_FLAG_ENGINEERING
 
+/datum/design/board/mass_driver
+	name = "Machine Design (Mass Driver)"
+	desc = "The circuit board for a mass driver."
+	id = "mass_driver"
+	build_path = /obj/item/circuitboard/machine/mass_driver
+	category = list ("Misc. Machinery")
+	departmental_flags = DEPARTMENTAL_FLAG_SCIENCE | DEPARTMENTAL_FLAG_ENGINEERING | DEPARTMENTAL_FLAG_SERVICE
+
 /datum/design/board/ore_silo
 	name = "Machine Design (Ore Silo)"
 	desc = "The circuit board for an ore silo."
@@ -594,11 +650,11 @@
 	build_path = /obj/item/circuitboard/machine/stasis
 	category = list("Medical Machinery")
 	departmental_flags = DEPARTMENTAL_FLAG_MEDICAL
-	
-/datum/design/board/spaceship_navigation_beacon
-	name = "Machine Design (Bluespace Navigation Gigabeacon)"
-	desc = "The circuit board for a Bluespace Navigation Gigabeacon."
-	id = "spaceship_navigation_beacon"
-	build_path = /obj/item/circuitboard/machine/spaceship_navigation_beacon
-	category = list ("Teleportation Machinery")
-	departmental_flags = DEPARTMENTAL_FLAG_ENGINEERING | DEPARTMENTAL_FLAG_SCIENCE
+
+/datum/design/board/component_printer
+	name = "Machine Design (Component Printer)"
+	desc = "The circuit board for a component printer"
+	id = "component_printer"
+	build_path = /obj/item/circuitboard/machine/component_printer
+	category = list("Misc. Machinery")
+	departmental_flags = DEPARTMENTAL_FLAG_SCIENCE

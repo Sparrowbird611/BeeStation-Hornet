@@ -13,6 +13,12 @@
 	buckle_requires_restraints = 1
 	buckle_lying = -1
 
+	FASTDMM_PROP(\
+		set_instance_vars(\
+			icon_state = INSTANCE_VAR_DEFAULT\
+        ),\
+    )
+
 /obj/machinery/atmospherics/pipe/New()
 	add_atom_colour(pipe_color, FIXED_COLOUR_PRIORITY)
 	volume = 35 * device_type
@@ -22,7 +28,7 @@
 	var/obj/machinery/atmospherics/oldN = nodes[i]
 	..()
 	if(oldN)
-		oldN.build_network()
+		SSair.add_to_rebuild_queue(oldN)
 
 /obj/machinery/atmospherics/pipe/destroy_network()
 	QDEL_NULL(parent)
@@ -49,13 +55,18 @@
 		air_update_turf()
 
 /obj/machinery/atmospherics/pipe/return_air()
-	return parent.air
+	if(parent)
+		return parent.air
 
 /obj/machinery/atmospherics/pipe/return_analyzable_air()
-	return parent.air
+	if(parent)
+		return parent.air
 
 /obj/machinery/atmospherics/pipe/remove_air(amount)
 	return parent.air.remove(amount)
+
+/obj/machinery/atmospherics/pipe/remove_air_ratio(ratio)
+	return parent.air.remove_ratio(ratio)
 
 /obj/machinery/atmospherics/pipe/attackby(obj/item/W, mob/user, params)
 	if(istype(W, /obj/item/pipe_meter))
@@ -66,7 +77,8 @@
 		return ..()
 
 /obj/machinery/atmospherics/pipe/returnPipenet()
-	return parent
+	if(parent)
+		return parent.air
 
 /obj/machinery/atmospherics/pipe/setPipenet(datum/pipeline/P)
 	parent = P

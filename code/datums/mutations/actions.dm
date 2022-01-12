@@ -25,9 +25,9 @@
 /datum/mutation/human/olfaction/on_life()
 	var/hygiene_now = owner.hygiene
 
-	if(hygiene_now < 100 && prob(5))
+	if(hygiene_now < 100 && prob(3))
 		owner.adjust_disgust(GET_MUTATION_SYNCHRONIZER(src) * (rand(3,5)))
-	if(hygiene_now < HYGIENE_LEVEL_DIRTY && prob(50))
+	if(hygiene_now < HYGIENE_LEVEL_DIRTY && prob(15))
 		to_chat(owner,"<span class='danger'>You get a whiff of your stench and feel sick!</span>")
 		owner.adjust_disgust(GET_MUTATION_SYNCHRONIZER(src) * rand(5,10))
 
@@ -59,12 +59,12 @@
 		possible = list()
 		var/list/prints = sniffed.return_fingerprints()
 		for(var/mob/living/carbon/C in GLOB.carbon_list)
-			if(prints[md5(C.dna.uni_identity)])
+			if(prints[rustg_hash_string(RUSTG_HASH_MD5, C.dna.uni_identity)])
 				possible |= C
 		if(!length(possible))
 			to_chat(user,"<span class='warning'>Despite your best efforts, there are no scents to be found on [sniffed]...</span>")
 			return
-		tracking_target = input(user, "Choose a scent to remember.", "Scent Tracking") as null|anything in possible
+		tracking_target = input(user, "Choose a scent to remember.", "Scent Tracking") as null|anything in sortNames(possible)
 		if(!tracking_target)
 			if(!old_target)
 				to_chat(user,"<span class='warning'>You decide against remembering any scents. Instead, you notice your own nose in your peripheral vision. This goes on to remind you of that one time you started breathing manually and couldn't stop. What an awful day that was.</span>")
@@ -89,10 +89,10 @@
 	if(tracking_target == user)
 		to_chat(user,"<span class='warning'>You smell out the trail to yourself. Yep, it's you.</span>")
 		return
-	if(usr.z < tracking_target.z)
+	if(usr.get_virtual_z_level() < tracking_target.get_virtual_z_level())
 		to_chat(user,"<span class='warning'>The trail leads... way up above you? Huh. They must be really, really far away.</span>")
 		return
-	else if(usr.z > tracking_target.z)
+	else if(usr.get_virtual_z_level() > tracking_target.get_virtual_z_level())
 		to_chat(user,"<span class='warning'>The trail leads... way down below you? Huh. They must be really, really far away.</span>")
 		return
 	var/direction_text = "[dir2text(get_dir(usr, tracking_target))]"
@@ -146,11 +146,7 @@
 	if(!istype(P, /obj/item/projectile/magic/aoe/fireball))
 		return
 	var/obj/item/projectile/magic/aoe/fireball/F = P
-	switch(strength)
-		if(1 to 3)
-			F.exp_light = strength-1
-		if(4 to INFINITY)
-			F.exp_heavy = strength-3
+	F.exp_light = strength-1
 	F.exp_fire += strength
 
 /obj/item/projectile/magic/aoe/fireball/firebreath

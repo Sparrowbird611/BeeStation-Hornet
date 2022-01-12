@@ -1,6 +1,13 @@
 /datum/wires/airalarm
 	holder_type = /obj/machinery/airalarm
 	proper_name = "Air Alarm"
+	FASTDMM_PROP(\
+		set_instance_vars(\
+			pixel_x = (dir & 3)? INSTANCE_VAR_DEFAULT : (dir == 4 ? -24 : 24),\
+			pixel_y = (dir & 3)? (dir == 1 ? -24 : 24) : INSTANCE_VAR_DEFAULT\
+        ),\
+		dir_amount = 4\
+    )
 
 /datum/wires/airalarm/New(atom/holder)
 	wires = list(
@@ -47,7 +54,7 @@
 				A.apply_mode(usr)
 		if(WIRE_ALARM) // Clear alarms.
 			var/area/AA = get_area(A)
-			if(AA.atmosalert(0, holder))
+			if(AA.atmosalert(FALSE, holder))
 				A.post_alert(0)
 			A.update_icon()
 
@@ -69,6 +76,6 @@
 				A.apply_mode(usr)
 		if(WIRE_ALARM) // Post alarm.
 			var/area/AA = get_area(A)
-			if(AA.atmosalert(2, holder))
+			if(AA.atmosalert(TRUE, holder))
 				A.post_alert(2)
 			A.update_icon()

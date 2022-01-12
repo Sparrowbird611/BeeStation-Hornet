@@ -15,7 +15,7 @@
 /obj/machinery/computer/crew/syndie
 	icon_keyboard = "syndie_key"
 
-/obj/machinery/computer/crew/interact(mob/user)
+/obj/machinery/computer/crew/ui_interact(mob/user)
 	GLOB.crewmonitor.show(user,src)
 
 GLOBAL_DATUM_INIT(crewmonitor, /datum/crewmonitor, new)
@@ -37,15 +37,18 @@ GLOBAL_DATUM_INIT(crewmonitor, /datum/crewmonitor, new)
 	jobs["Security Officer"] = 12
 	jobs["Detective"] = 13
 	jobs["Brig Physician"] = 14
+	jobs["Deputy"] = 16
 	jobs["Chief Medical Officer"] = 20
 	jobs["Chemist"] = 21
 	jobs["Geneticist"] = 22
 	jobs["Virologist"] = 23
 	jobs["Medical Doctor"] = 24
 	jobs["Paramedic"] = 25
+	jobs["Psychiatrist"] = 26 //psychiatrist will count as medical, even being gimmick
 	jobs["Research Director"] = 30
 	jobs["Scientist"] = 31
 	jobs["Roboticist"] = 32
+	jobs["Exploration Crew"] = 33
 	jobs["Chief Engineer"] = 40
 	jobs["Station Engineer"] = 41
 	jobs["Atmospheric Technician"] = 42
@@ -61,6 +64,9 @@ GLOBAL_DATUM_INIT(crewmonitor, /datum/crewmonitor, new)
 	jobs["Mime"] = 67
 	jobs["Janitor"] = 68
 	jobs["Lawyer"] = 69
+	jobs["Barber"] = 70
+	jobs["Stage Magician"] = 71
+	jobs["VIP"] = 72
 	jobs["Admiral"] = 200
 	jobs["CentCom Commander"] = 210
 	jobs["Custodian"] = 211
@@ -77,25 +83,29 @@ GLOBAL_DATUM_INIT(crewmonitor, /datum/crewmonitor, new)
 /datum/crewmonitor/Destroy()
 	return ..()
 
-/datum/crewmonitor/ui_interact(mob/user, ui_key = "crew", datum/tgui/ui = null, force_open = FALSE, \
-							datum/tgui/master_ui = null, datum/ui_state/state = GLOB.default_state)
-	ui = SStgui.try_update_ui(user, src, ui_key, ui, force_open)
+
+/datum/crewmonitor/ui_state(mob/user)
+	return GLOB.default_state
+
+/datum/crewmonitor/ui_interact(mob/user, datum/tgui/ui)
+	ui = SStgui.try_update_ui(user, src, ui)
 	if (!ui)
-		ui = new(user, src, ui_key, "crew", "crew monitor", 800, 600 , master_ui, state)
+		ui = new(user, src, "CrewConsole")
 		ui.open()
+		ui.set_autoupdate(TRUE)
 
 /datum/crewmonitor/proc/show(mob/M, source)
-	ui_sources[M] = source
+	ui_sources[WEAKREF(M)] = source
 	ui_interact(M)
 
 /datum/crewmonitor/ui_host(mob/user)
-	return ui_sources[user]
+	return ui_sources[WEAKREF(user)]
 
 /datum/crewmonitor/ui_data(mob/user)
-	var/z = user.z
+	var/z = user.get_virtual_z_level()
 	if(!z)
 		var/turf/T = get_turf(user)
-		z = T.z
+		z = T.get_virtual_z_level()
 	var/list/zdata = update_data(z)
 	. = list()
 	.["sensors"] = zdata
@@ -127,15 +137,19 @@ GLOBAL_DATUM_INIT(crewmonitor, /datum/crewmonitor, new)
 			nanite_sensors = TRUE
 		// Check if their z-level is correct and if they are wearing a uniform.
 		// Accept H.z==0 as well in case the mob is inside an object.
-		if ((H.z == 0 || H.z == z) && (istype(H.w_uniform, /obj/item/clothing/under) || nanite_sensors))
+		if ((H.z == 0 || H.get_virtual_z_level() == z || (is_station_level(H.z) && is_station_level(z))) && (istype(H.w_uniform, /obj/item/clothing/under) || nanite_sensors))
 			U = H.w_uniform
+
+			//Radio transmitters are jammed
+			if(nanite_sensors ? H.is_jammed() : U.is_jammed())
+				continue
 
 			// Are the suit sensors on?
 			if (nanite_sensors || ((U.has_sensor > 0) && U.sensor_mode))
 				pos = H.z == 0 || (nanite_sensors || U.sensor_mode == SENSOR_COORDS) ? get_turf(H) : null
 
 				// Special case: If the mob is inside an object confirm the z-level on turf level.
-				if (H.z == 0 && (!pos || pos.z != z))
+				if (H.z == 0 && (!pos || (pos.get_virtual_z_level() != z) && !(is_station_level(pos.z) && is_station_level(z))))
 					continue
 
 				I = H.wear_id ? H.wear_id.GetID() : null

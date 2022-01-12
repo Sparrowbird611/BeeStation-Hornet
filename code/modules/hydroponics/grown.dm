@@ -21,6 +21,8 @@
 	var/wine_flavor //If NULL, this is automatically set to the fruit's flavor. Determines the flavor of the wine if distill_reagent is NULL.
 	var/wine_power = 10 //Determines the boozepwr of the wine if distill_reagent is NULL.
 
+	var/discovery_points = 0 //Amount of discovery points given for scanning
+
 /obj/item/reagent_containers/food/snacks/grown/Initialize(mapload, obj/item/seeds/new_seed)
 	. = ..()
 	if(!tastes)
@@ -45,6 +47,9 @@
 		seed.prepare_result(src)
 		transform *= TRANSFORM_USING_VARIABLE(seed.potency, 100) + 0.5 //Makes the resulting produce's sprite larger or smaller based on potency!
 		add_juice()
+	
+	if(discovery_points)
+		AddComponent(/datum/component/discoverable, discovery_points)
 
 
 
@@ -117,11 +122,14 @@
 	if(seed)
 		for(var/datum/plant_gene/trait/trait in seed.genes)
 			trait.on_squash(src, target)
-
 	reagents.reaction(T)
 	for(var/A in T)
 		reagents.reaction(A)
+	qdel(src)
 
+/obj/item/reagent_containers/food/snacks/grown/proc/squashreact()
+	for(var/datum/plant_gene/trait/trait in seed.genes)
+		trait.on_squashreact(src)
 	qdel(src)
 
 /obj/item/reagent_containers/food/snacks/grown/On_Consume()
@@ -132,7 +140,7 @@
 	..()
 
 /obj/item/reagent_containers/food/snacks/grown/generate_trash(atom/location)
-	if(trash && ispath(trash, /obj/item/grown))
+	if(trash && (ispath(trash, /obj/item/grown) || ispath(trash, /obj/item/reagent_containers/food/snacks/grown)))
 		. = new trash(location, seed)
 		trash = null
 		return
@@ -160,11 +168,20 @@
 		reagents.del_reagent(/datum/reagent/consumable/nutriment)
 		reagents.del_reagent(/datum/reagent/consumable/nutriment/vitamin)
 
-// For item-containing growns such as eggy or gatfruit
+/*
+ * Attack self for growns
+ *
+ * Spawns the trash item at the growns drop_location()
+ *
+ * Then deletes the grown object
+ *
+ * Then puts trash item into the hand of user attack selfing, or drops it back on the ground
+ */
 /obj/item/reagent_containers/food/snacks/grown/shell/attack_self(mob/user)
 	var/obj/item/T
 	if(trash)
 		T = generate_trash()
+		T.remove_item_from_storage(get_turf(T))
 		qdel(src)
-		user.putItemFromInventoryInHandIfPossible(T, user.active_hand_index, TRUE)
+		user.put_in_hands(T, FALSE)
 		to_chat(user, "<span class='notice'>You open [src]\'s shell, revealing \a [T].</span>")

@@ -161,6 +161,31 @@
 			name = "near finished airlock assembly"
 			electronics = W
 
+	else if(istype(W, /obj/item/electroadaptive_pseudocircuit) && state == AIRLOCK_ASSEMBLY_NEEDS_ELECTRONICS )
+		var/obj/item/electroadaptive_pseudocircuit/EP = W
+		if(EP.adapt_circuit(user, 25))
+			var/obj/item/electronics/airlock/AE = new(src)
+			AE.accesses = EP.electronics.accesses
+			AE.one_access = EP.electronics.one_access
+			AE.unres_sides = EP.electronics.unres_sides
+			AE.play_tool_sound(src, 100)
+			user.visible_message("[user] installs the electronics into the airlock assembly.", \
+								"<span class='notice'>You start to install electronics into the airlock assembly...</span>")
+			if(do_after(user, 40, target = src))
+				if( state != AIRLOCK_ASSEMBLY_NEEDS_ELECTRONICS )
+					qdel(AE)
+					return
+				if(!user.transferItemToLoc(AE, src))
+					qdel(AE)
+					return
+
+				to_chat(user, "<span class='notice'>You install the electroadaptive pseudocircuit.</span>")
+				state = AIRLOCK_ASSEMBLY_NEEDS_SCREWDRIVER
+				name = "near finished airlock assembly"
+				electronics = AE
+			else 
+				qdel(AE)
+
 
 	else if((W.tool_behaviour == TOOL_CROWBAR) && state == AIRLOCK_ASSEMBLY_NEEDS_SCREWDRIVER )
 		user.visible_message("[user] removes the electronics from the airlock assembly.", \
@@ -312,3 +337,17 @@
 			var/obj/item/stack/sheet/mineral/mineral_path = text2path("/obj/item/stack/sheet/mineral/[mineral]")
 			new mineral_path(T, 2)
 	qdel(src)
+
+
+/obj/structure/door_assembly/rcd_vals(mob/user, obj/item/construction/rcd/the_rcd)
+	if(the_rcd.mode == RCD_DECONSTRUCT)
+		return list("mode" = RCD_DECONSTRUCT, "delay" = 50, "cost" = 16)
+	return FALSE
+
+/obj/structure/door_assembly/rcd_act(mob/user, obj/item/construction/rcd/the_rcd, passed_mode)
+	switch(passed_mode)
+		if(RCD_DECONSTRUCT)
+			to_chat(user, "<span class='notice'>You deconstruct [src].</span>")
+			qdel(src)
+			return TRUE
+	return FALSE

@@ -26,6 +26,9 @@
 	flight_x_offset = 18
 	flight_y_offset = 11
 
+/obj/item/gun/energy/ionrifle/carbine/pin
+	pin = /obj/item/firing_pin
+
 /obj/item/gun/energy/decloner
 	name = "biological demolecularisor"
 	desc = "A gun that discharges high amounts of controlled radiation to slowly break a target into component elements."
@@ -117,6 +120,13 @@
 	ammo_type = list(/obj/item/ammo_casing/energy/bolt/large)
 	pin = null
 
+/obj/item/gun/energy/kinetic_accelerator/crossbow/radbow
+	name = "gamma bow"
+	desc = "A weapon favored by Madmen."
+	icon_state = "crossbow"
+	item_state = "crossbow"
+	ammo_type = list(/obj/item/ammo_casing/energy/bolt/radbolt)
+	overheat_time = 250
 
 /obj/item/gun/energy/plasmacutter
 	name = "plasma cutter"
@@ -129,6 +139,7 @@
 	force = 12
 	sharpness = IS_SHARP
 	can_charge = FALSE
+	dead_cell = TRUE
 
 	heat = 3800
 	usesound = list('sound/items/welder.ogg', 'sound/items/welder2.ogg')
@@ -137,6 +148,9 @@
 	var/progress_flash_divisor = 10  //copypasta is best pasta
 	var/light_intensity = 1
 	var/charge_weld = 25 //amount of charge used up to start action (multiplied by amount) and per progress_flash_divisor ticks of welding
+	weapon_weight = WEAPON_LIGHT
+	fire_rate = 3
+	automatic = 1
 
 /obj/item/gun/energy/plasmacutter/Initialize()
 	. = ..()
@@ -158,7 +172,7 @@
 			to_chat(user, "<span class='notice'>You try to insert [I] into [src], but it's fully charged.</span>") //my cell is round and full
 			return
 		I.use(1)
-		cell.give(500*charge_multiplier)
+		cell.give(50*charge_multiplier)
 		to_chat(user, "<span class='notice'>You insert [I] in [src], recharging it.</span>")
 	else
 		..()
@@ -216,6 +230,15 @@
 	force = 15
 	ammo_type = list(/obj/item/ammo_casing/energy/plasma/adv)
 
+/obj/item/gun/energy/plasmacutter/cyborg
+	name = "cyborg plasma cutter"
+	desc = "An integrated plasma cutter."
+	dead_cell = FALSE
+	can_charge = FALSE
+	use_cyborg_cell = TRUE
+	tool_behaviour = null //because it will drain the cutters cell and not the borgs.
+
+
 /obj/item/gun/energy/wormhole_projector
 	name = "bluespace wormhole projector"
 	desc = "A projector that emits high density quantum-coupled bluespace beams."
@@ -235,10 +258,10 @@
 	for(var/i in 1 to ammo_type.len)
 		var/obj/item/ammo_casing/energy/wormhole/W = ammo_type[i]
 		if(istype(W))
-			W.gun = src
+			W.gun = WEAKREF(src)
 			var/obj/item/projectile/beam/wormhole/WH = W.BB
 			if(istype(WH))
-				WH.gun = src
+				WH.gun = WEAKREF(src)
 
 /obj/item/gun/energy/wormhole_projector/process_chamber()
 	..()
@@ -294,6 +317,8 @@
 	ammo_type = list(/obj/item/ammo_casing/energy/c3dbullet)
 	can_charge = FALSE
 	use_cyborg_cell = TRUE
+	automatic = 1
+	fire_rate = 6
 
 /obj/item/gun/energy/printer/update_icon()
 	return
@@ -307,12 +332,18 @@
 	desc = "A gun that changes temperatures."
 	ammo_type = list(/obj/item/ammo_casing/energy/temp, /obj/item/ammo_casing/energy/temp/hot)
 	cell_type = "/obj/item/stock_parts/cell/high"
+	automatic = 1
+	fire_rate = 4
 	pin = null
+
+/obj/item/gun/energy/temperature/pin
+	pin = /obj/item/firing_pin
 
 /obj/item/gun/energy/temperature/security
 	name = "security temperature gun"
 	desc = "A weapon that can only be used to its full potential by the truly robust."
 	pin = /obj/item/firing_pin
+	w_class = WEIGHT_CLASS_BULKY
 
 /obj/item/gun/energy/laser/instakill
 	name = "instakill rifle"

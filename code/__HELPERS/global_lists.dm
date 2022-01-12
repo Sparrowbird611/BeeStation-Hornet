@@ -40,10 +40,12 @@
 	for(var/spath in subtypesof(/datum/species))
 		var/datum/species/S = new spath()
 		GLOB.species_list[S.id] = spath
+	sortList(GLOB.species_list)
 
 	//Surgeries
 	for(var/path in subtypesof(/datum/surgery))
 		GLOB.surgeries_list += new path()
+	sortList(GLOB.surgeries_list)
 
 	GLOB.emote_list = init_emote_list()
 
@@ -52,7 +54,7 @@
 	// Keybindings
 	for(var/KB in subtypesof(/datum/keybinding))
 		var/datum/keybinding/keybinding = KB
-		if(!initial(keybinding.key))
+		if(!initial(keybinding.key) || !initial(keybinding.keybind_signal))
 			continue
 		var/datum/keybinding/instance = new keybinding
 		GLOB.keybindings_by_name[initial(instance.name)] = instance

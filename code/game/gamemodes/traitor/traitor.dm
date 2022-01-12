@@ -12,7 +12,7 @@
 	antag_flag = ROLE_TRAITOR
 	false_report_weight = 20 //Reports of traitors are pretty common.
 	restricted_jobs = list("Cyborg")//They are part of the AI if he is traitor so are they, they use to get double chances
-	protected_jobs = list("Security Officer", "Warden", "Detective", "Head of Security", "Captain", "Brig Physician")
+	protected_jobs = list("Security Officer", "Warden", "Detective", "Head of Security", "Captain")
 	required_players = 0
 	required_enemies = 1
 	recommended_enemies = 4
@@ -41,6 +41,9 @@
 	if(CONFIG_GET(flag/protect_assistant_from_antagonist))
 		restricted_jobs += "Assistant"
 
+	if(CONFIG_GET(flag/protect_heads_from_antagonist))
+		restricted_jobs += GLOB.command_positions
+
 	var/num_traitors = 1
 
 	var/tsc = CONFIG_GET(number/traitor_scaling_coeff)
@@ -52,7 +55,7 @@
 	for(var/j = 0, j < num_traitors, j++)
 		if (!antag_candidates.len)
 			break
-		var/datum/mind/traitor = antag_pick(antag_candidates)
+		var/datum/mind/traitor = antag_pick(antag_candidates, ROLE_TRAITOR)
 		pre_traitors += traitor
 		traitor.special_role = traitor_name
 		traitor.restricted_roles = restricted_jobs

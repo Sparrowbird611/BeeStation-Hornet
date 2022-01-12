@@ -5,6 +5,7 @@
 	icon_state = "pickaxe"
 	flags_1 = CONDUCT_1
 	slot_flags = ITEM_SLOT_BELT | ITEM_SLOT_BACK
+	attack_weight = 2
 	force = 15
 	throwforce = 10
 	item_state = "pickaxe"

@@ -1,3 +1,9 @@
+/proc/apid_name(gender)
+	if(gender == MALE)
+		return "[pick(GLOB.apid_names_male)] [pick(GLOB.apid_names_last)]"
+	else
+		return "[pick(GLOB.apid_names_female)] [pick(GLOB.apid_names_last)]"
+
 /proc/lizard_name(gender)
 	if(gender == MALE)
 		return "[pick(GLOB.lizard_names_male)]-[pick(GLOB.lizard_names_male)]"
@@ -19,28 +25,8 @@
 /proc/moth_name()
 	return "[pick(GLOB.moth_first)] [pick(GLOB.moth_last)]"
 
-proc/squid_name(gender)
-	if(gender == MALE)
-		return "[pick(GLOB.squid_names_male)] [pick(GLOB.last_names)]"
-	else
-		return "[pick(GLOB.squid_names_female)] [pick(GLOB.last_names)]"
-
-/proc/church_name()
-	var/static/church_name
-	if (church_name)
-		return church_name
-
-	var/name = ""
-
-	name += pick("Holy", "United", "First", "Second", "Last")
-
-	if (prob(20))
-		name += " Space"
-
-	name += " " + pick("Church", "Cathedral", "Body", "Worshippers", "Movement", "Witnesses")
-	name += " of [religion_name()]"
-
-	return name
+/proc/ooze_name()
+	return "[pick(GLOB.oozeling_first_names)] [pick(GLOB.oozeling_last_names)]"
 
 GLOBAL_VAR(command_name)
 /proc/command_name()
@@ -57,18 +43,6 @@ GLOBAL_VAR(command_name)
 	GLOB.command_name = name
 
 	return name
-
-/proc/religion_name()
-	var/static/religion_name
-	if (religion_name)
-		return religion_name
-
-	var/name = ""
-
-	name += pick("bee", "science", "edu", "captain", "assistant", "monkey", "alien", "space", "unit", "sprocket", "gadget", "bomb", "revolution", "beyond", "station", "goon", "robot", "ivor", "hobnob")
-	name += pick("ism", "ia", "ology", "istism", "ites", "ick", "ian", "ity")
-
-	return capitalize(name)
 
 /proc/station_name()
 	if(!GLOB.station_name)
@@ -92,6 +66,10 @@ GLOBAL_VAR(command_name)
 	else
 		world.name = GLOB.station_name
 
+	//Rename the station on the orbital charter.
+	if(SSorbits.station_instance)
+		SSorbits.station_instance.name = newname
+
 
 /proc/new_station_name()
 	var/random = rand(1,5)
@@ -105,11 +83,12 @@ GLOBAL_VAR(command_name)
 		name = ""
 
 	// Prefix
-	for(var/holiday_name in SSevents.holidays)
-		if(holiday_name == "Friday the 13th")
-			random = 13
+	var/holiday_name = pick(SSevents.holidays)
+	if(holiday_name)
 		var/datum/holiday/holiday = SSevents.holidays[holiday_name]
 		name = holiday.getStationPrefix()
+		if(istype(holiday, /datum/holiday/friday_thirteenth))
+			random = 13
 		//get normal name
 	if(!name)
 		name = pick(GLOB.station_names)

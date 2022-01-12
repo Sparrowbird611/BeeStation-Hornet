@@ -9,19 +9,30 @@
 	spawn_positions = 5 //Handled in /datum/controller/occupations/proc/setup_officer_positions()
 	supervisors = "the head of security, and the head of your assigned department (if applicable)"
 	selection_color = "#ffeeee"
+	chat_color = "#E6A3A3"
 	minimal_player_age = 7
-	exp_requirements = 420
+	exp_requirements = 840
 	exp_type = EXP_TYPE_CREW
 
 	outfit = /datum/outfit/job/security
 
-	access = list(ACCESS_SECURITY, ACCESS_SEC_DOORS, ACCESS_BRIG, ACCESS_COURT, ACCESS_MAINT_TUNNELS, ACCESS_MECH_SECURITY, ACCESS_MORGUE, ACCESS_WEAPONS, ACCESS_FORENSICS_LOCKERS, ACCESS_MINERAL_STOREROOM)
-	minimal_access = list(ACCESS_SECURITY, ACCESS_SEC_DOORS, ACCESS_BRIG, ACCESS_COURT, ACCESS_WEAPONS, ACCESS_MECH_SECURITY, ACCESS_MINERAL_STOREROOM) // See /datum/job/officer/get_access()
+	access = list(ACCESS_SECURITY, ACCESS_SEC_DOORS, ACCESS_SEC_RECORDS, ACCESS_BRIG, ACCESS_COURT, ACCESS_MAINT_TUNNELS,
+					ACCESS_MECH_SECURITY, ACCESS_MORGUE, ACCESS_WEAPONS, ACCESS_FORENSICS_LOCKERS,
+					ACCESS_MINERAL_STOREROOM)
+	minimal_access = list(ACCESS_SECURITY, ACCESS_SEC_DOORS, ACCESS_SEC_RECORDS, ACCESS_BRIG, ACCESS_COURT, ACCESS_WEAPONS,
+					ACCESS_MECH_SECURITY, ACCESS_MINERAL_STOREROOM) // See /datum/job/officer/get_access()
 	paycheck = PAYCHECK_HARD
 	paycheck_department = ACCOUNT_SEC
 	mind_traits = list(TRAIT_LAW_ENFORCEMENT_METABOLISM)
 
 	display_order = JOB_DISPLAY_ORDER_SECURITY_OFFICER
+	departments = DEPARTMENT_SECURITY
+	rpg_title = "Guard"
+
+	species_outfits = list(
+		SPECIES_PLASMAMAN = /datum/outfit/plasmaman/security
+	)
+	biohazard = 15 //clean your baton, man
 
 /datum/job/officer/get_access()
 	var/list/L = list()
@@ -50,13 +61,13 @@ GLOBAL_LIST_INIT(available_depts, list(SEC_DEPT_ENGINEERING, SEC_DEPT_MEDICAL, S
 	switch(department)
 		if(SEC_DEPT_SUPPLY)
 			ears = /obj/item/radio/headset/headset_sec/alt/department/supply
-			dep_access = list(ACCESS_MAILSORTING, ACCESS_MINING, ACCESS_MINING_STATION, ACCESS_CARGO)
+			dep_access = list(ACCESS_MAILSORTING, ACCESS_MINING, ACCESS_MINING_STATION, ACCESS_CARGO, ACCESS_AUX_BASE)
 			destination = /area/security/checkpoint/supply
 			spawn_point = locate(/obj/effect/landmark/start/depsec/supply) in GLOB.department_security_spawns
 			accessory = /obj/item/clothing/accessory/armband/cargo
 		if(SEC_DEPT_ENGINEERING)
 			ears = /obj/item/radio/headset/headset_sec/alt/department/engi
-			dep_access = list(ACCESS_CONSTRUCTION, ACCESS_ENGINE, ACCESS_ATMOSPHERICS)
+			dep_access = list(ACCESS_CONSTRUCTION, ACCESS_ENGINE, ACCESS_ATMOSPHERICS, ACCESS_AUX_BASE)
 			destination = /area/security/checkpoint/engineering
 			spawn_point = locate(/obj/effect/landmark/start/depsec/engineering) in GLOB.department_security_spawns
 			accessory = /obj/item/clothing/accessory/armband/engine
@@ -68,7 +79,7 @@ GLOBAL_LIST_INIT(available_depts, list(SEC_DEPT_ENGINEERING, SEC_DEPT_MEDICAL, S
 			accessory =  /obj/item/clothing/accessory/armband/medblue
 		if(SEC_DEPT_SCIENCE)
 			ears = /obj/item/radio/headset/headset_sec/alt/department/sci
-			dep_access = list(ACCESS_RESEARCH, ACCESS_TOX)
+			dep_access = list(ACCESS_RESEARCH, ACCESS_TOX, ACCESS_AUX_BASE)
 			destination = /area/security/checkpoint/science
 			spawn_point = locate(/obj/effect/landmark/start/depsec/science) in GLOB.department_security_spawns
 			accessory = /obj/item/clothing/accessory/armband/science
@@ -79,7 +90,7 @@ GLOBAL_LIST_INIT(available_depts, list(SEC_DEPT_ENGINEERING, SEC_DEPT_MEDICAL, S
 	if(ears)
 		if(H.ears)
 			qdel(H.ears)
-		H.equip_to_slot_or_del(new ears(H),SLOT_EARS)
+		H.equip_to_slot_or_del(new ears(H),ITEM_SLOT_EARS)
 
 	var/obj/item/card/id/W = H.wear_id
 	W.access |= dep_access
@@ -116,7 +127,7 @@ GLOBAL_LIST_INIT(available_depts, list(SEC_DEPT_ENGINEERING, SEC_DEPT_MEDICAL, S
 	id = /obj/item/card/id/job/sec
 	belt = /obj/item/pda/security
 	ears = /obj/item/radio/headset/headset_sec/alt
-	uniform = /obj/item/clothing/under/rank/security
+	uniform = /obj/item/clothing/under/rank/security/officer
 	gloves = /obj/item/clothing/gloves/color/black
 	head = /obj/item/clothing/head/helmet/sec
 	suit = /obj/item/clothing/suit/armor/vest/alt

@@ -19,17 +19,18 @@ GLOBAL_LIST_INIT(medical_positions, list(
 	"Geneticist",
 	"Virologist",
 	"Paramedic",
-	"Chemist"))
+	"Chemist",
+	"Brig Physician"))
 
 
 GLOBAL_LIST_INIT(science_positions, list(
 	"Research Director",
 	"Scientist",
+	"Exploration Crew",
 	"Roboticist"))
 
 
 GLOBAL_LIST_INIT(supply_positions, list(
-	"Head of Personnel",
 	"Quartermaster",
 	"Cargo Technician",
 	"Shaft Miner"))
@@ -47,13 +48,20 @@ GLOBAL_LIST_INIT(civilian_positions, list(
 	"Mime",
 	"Assistant"))
 
+GLOBAL_LIST_INIT(gimmick_positions, list(
+	"Gimmick",
+	"Barber",
+	"Stage Magician",
+	"Debtor",
+	"Psychiatrist",
+	"VIP"))
 
 GLOBAL_LIST_INIT(security_positions, list(
 	"Head of Security",
 	"Warden",
 	"Detective",
 	"Security Officer",
-	"Brig Physician"))
+	"Deputy"))
 
 
 GLOBAL_LIST_INIT(nonhuman_positions, list(
@@ -62,7 +70,7 @@ GLOBAL_LIST_INIT(nonhuman_positions, list(
 	ROLE_PAI))
 
 GLOBAL_LIST_INIT(exp_jobsmap, list(
-	EXP_TYPE_CREW = list("titles" = command_positions | engineering_positions | medical_positions | science_positions | supply_positions | security_positions | civilian_positions | list("AI","Cyborg")), // crew positions
+	EXP_TYPE_CREW = list("titles" = command_positions | engineering_positions | medical_positions | science_positions | supply_positions | security_positions | civilian_positions | gimmick_positions | list("AI","Cyborg")), // crew positions
 	EXP_TYPE_COMMAND = list("titles" = command_positions),
 	EXP_TYPE_ENGINEERING = list("titles" = engineering_positions),
 	EXP_TYPE_MEDICAL = list("titles" = medical_positions),
@@ -70,13 +78,14 @@ GLOBAL_LIST_INIT(exp_jobsmap, list(
 	EXP_TYPE_SUPPLY = list("titles" = supply_positions),
 	EXP_TYPE_SECURITY = list("titles" = security_positions),
 	EXP_TYPE_SILICON = list("titles" = list("AI","Cyborg")),
-	EXP_TYPE_SERVICE = list("titles" = civilian_positions),
+	EXP_TYPE_SERVICE = list("titles" = civilian_positions | gimmick_positions),
+	EXP_TYPE_GIMMICK = list("titles" = gimmick_positions)
 ))
 
 GLOBAL_LIST_INIT(exp_specialmap, list(
 	EXP_TYPE_LIVING = list(), // all living mobs
 	EXP_TYPE_ANTAG = list(),
-	EXP_TYPE_SPECIAL = list("Lifebringer","Ash Walker","Exile","Servant Golem","Free Golem","Hermit","Translocated Vet","Escaped Prisoner","Hotel Staff","SuperFriend","Space Syndicate","Ancient Crew","Space Doctor","Space Bartender","Beach Bum","Skeleton","Zombie","Space Bar Patron","Lavaland Syndicate","Ghost Role"), // Ghost roles
+	EXP_TYPE_SPECIAL = list("Lifebringer","Ash Walker","Exile","Servant Golem","Free Golem","Hermit","Translocated Vet","Escaped Prisoner","Hotel Staff","SuperFriend","Space Syndicate","Ancient Crew","Space Doctor","Space Bartender","Beach Bum","Skeleton","Zombie","Space Bar Patron","Lavaland Syndicate","Personal AI","Ghost Role"), // Ghost roles
 	EXP_TYPE_GHOST = list() // dead people, observers
 ))
 GLOBAL_PROTECT(exp_jobsmap)

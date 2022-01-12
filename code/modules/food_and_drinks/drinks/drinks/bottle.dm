@@ -11,10 +11,10 @@
 	item_state = "broken_beer" //Generic held-item sprite until unique ones are made.
 	lefthand_file = 'icons/mob/inhands/misc/food_lefthand.dmi'
 	righthand_file = 'icons/mob/inhands/misc/food_righthand.dmi'
-	var/const/duration = 13 //Directly relates to the 'knockdown' duration. Lowered by armor (i.e. helmets)
 	isGlass = TRUE
 	foodtype = ALCOHOL
-
+	///Directly relates to the 'knockdown' duration. Lowered by armor (i.e. helmets)
+	var/bottle_knockdown_duration = 1.3 SECONDS
 
 /obj/item/reagent_containers/food/drinks/bottle/smash(mob/living/target, mob/thrower, ranged = FALSE)
 	//Creates a shattering noise and replaces the bottle with a broken_bottle
@@ -78,13 +78,13 @@
 			headarmor = 0
 
 		//Calculate the knockdown duration for the target.
-		armor_duration = (duration - headarmor) + force
+		armor_duration = (bottle_knockdown_duration - headarmor) + force
 
 	else
 		//Only humans can have armor, right?
 		armor_block = target.run_armor_check(affecting, "melee")
 		if(affecting == BODY_ZONE_HEAD)
-			armor_duration = duration + force
+			armor_duration = bottle_knockdown_duration + force
 
 	//Apply the damage!
 	armor_block = min(90,armor_block)
@@ -326,6 +326,24 @@
 	icon_state = "fernetbottle"
 	list_reagents = list(/datum/reagent/consumable/ethanol/fernet = 100)
 
+/obj/item/reagent_containers/food/drinks/bottle/beer
+	name = "Space Beer"
+	desc = "Beer. In space. In a bigger bottle."
+	icon_state = "beer"
+	list_reagents = list(/datum/reagent/consumable/ethanol/beer = 100)
+
+/obj/item/reagent_containers/food/drinks/bottle/ale
+	name = "Magm-Ale"
+	desc = "A true dorf's drink of choice, now in a MANLY bottle."
+	icon_state = "alebottle"
+	list_reagents = list(/datum/reagent/consumable/ethanol/ale = 100)
+
+/obj/item/reagent_containers/food/drinks/bottle/homemaderum
+	name = "Cookie's Homemade Rum"
+	desc = "Brewed all the way back on Space Station 3. Might tell you where those basket-hats of fruit keep coming from."
+	icon_state = "moonshinebottle"
+	list_reagents = list(/datum/reagent/consumable/ethanol/rum = 95, /datum/reagent/drug/mushroomhallucinogen = 5)
+
 //////////////////////////JUICES AND STUFF ///////////////////////
 
 /obj/item/reagent_containers/food/drinks/bottle/orangejuice
@@ -338,7 +356,7 @@
 	righthand_file = 'icons/mob/inhands/equipment/kitchen_righthand.dmi'
 	isGlass = FALSE
 	list_reagents = list(/datum/reagent/consumable/orangejuice = 100)
-	foodtype = FRUIT
+	foodtype = FRUIT | BREAKFAST
 
 /obj/item/reagent_containers/food/drinks/bottle/cream
 	name = "milk cream"
@@ -376,6 +394,18 @@
 	list_reagents = list(/datum/reagent/consumable/limejuice = 100)
 	foodtype = FRUIT
 
+/obj/item/reagent_containers/food/drinks/bottle/pineapplejuice
+	name = "pineapple juice"
+	desc = "Extremely tart, yellow juice."
+	custom_price = 10
+	icon_state = "pineapplejuice"
+	item_state = "carton"
+	lefthand_file = 'icons/mob/inhands/equipment/kitchen_lefthand.dmi'
+	righthand_file = 'icons/mob/inhands/equipment/kitchen_righthand.dmi'
+	isGlass = FALSE
+	list_reagents = list(/datum/reagent/consumable/pineapplejuice = 100)
+	foodtype = FRUIT | PINEAPPLE
+
 /obj/item/reagent_containers/food/drinks/bottle/menthol
 	name = "menthol"
 	desc = "Tastes naturally minty, and imparts a very mild numbing sensation."
@@ -395,6 +425,28 @@
 	isGlass = TRUE
 	list_reagents = list(/datum/reagent/consumable/grenadine = 100)
 	foodtype = FRUIT
+
+/obj/item/reagent_containers/food/drinks/bottle/synthflesh
+	name = "carton of synthflesh"
+	desc = "A No-Name carton of synthflesh. It seems moldy. And it seems that YOUR INCOMPETENT ASS IS THE ONLY FUCKING REASON THIS THING EVEN EXISTS!!!!"
+	custom_price = 10
+	icon_state = "synthflesh"
+	item_state = "carton"
+	lefthand_file = 'icons/mob/inhands/equipment/kitchen_lefthand.dmi'
+	righthand_file = 'icons/mob/inhands/equipment/kitchen_righthand.dmi'
+	isGlass = FALSE
+	list_reagents = list(/datum/reagent/medicine/synthflesh = 100)
+
+/obj/item/reagent_containers/food/drinks/bottle/virusfood
+	name = "carton of virus food"
+	desc = "A carton of ready-mixed virus food. Do not drink."
+	custom_price = 10
+	icon_state = "virusfood"
+	item_state = "carton"
+	lefthand_file = 'icons/mob/inhands/equipment/kitchen_lefthand.dmi'
+	righthand_file = 'icons/mob/inhands/equipment/kitchen_righthand.dmi'
+	isGlass = FALSE
+	list_reagents = list(/datum/reagent/consumable/virus_food = 100)
 
 /obj/item/reagent_containers/food/drinks/bottle/applejack
 	name = "Buckin' Bronco's Applejack"
@@ -494,7 +546,7 @@
 		log_bomber(user, "has primed a", src, "for detonation")
 
 		to_chat(user, "<span class='info'>You light [src] on fire.</span>")
-		add_overlay(GLOB.fire_overlay)
+		add_overlay(custom_fire_overlay ? custom_fire_overlay : GLOB.fire_overlay)
 		if(!isGlass)
 			spawn(50)
 				if(active)
@@ -516,5 +568,5 @@
 			to_chat(user, "<span class='danger'>The flame's spread too far on it!</span>")
 			return
 		to_chat(user, "<span class='info'>You snuff out the flame on [src].</span>")
-		cut_overlay(GLOB.fire_overlay)
+		cut_overlay(custom_fire_overlay ? custom_fire_overlay : GLOB.fire_overlay)
 		active = 0

@@ -1,6 +1,7 @@
 /obj/item/projectile/bullet/shotgun_slug
 	name = "12g shotgun slug"
 	damage = 60
+	armour_penetration = -20
 
 /obj/item/projectile/bullet/shotgun_beanbag
 	name = "beanbag slug"
@@ -16,9 +17,12 @@
 	damage = 0
 
 /obj/item/projectile/bullet/sleepy/on_hit(atom/target, blocked = FALSE)
-	if((blocked != 100) && isliving(target))
+	if((blocked != 100) && ishuman(target))
 		var/mob/living/L = target
-		L.Sleeping(50)
+		if(L.confused)
+			L.Sleeping(50)
+		else
+			L.confused = 80
 	return ..()
 
 /obj/item/projectile/bullet/incendiary/shotgun/dragonsbreath
@@ -40,7 +44,7 @@
 	icon = 'icons/obj/meteor.dmi'
 	icon_state = "dust"
 	damage = 20
-	paralyze = 80
+	paralyze = 20
 	hitsound = 'sound/effects/meteorimpact.ogg'
 
 /obj/item/projectile/bullet/shotgun_meteorslug/on_hit(atom/target, blocked = FALSE)
@@ -57,7 +61,7 @@
 /obj/item/projectile/bullet/shotgun_frag12
 	name ="frag12 slug"
 	damage = 25
-	paralyze = 50
+	paralyze = 10
 
 /obj/item/projectile/bullet/shotgun_frag12/on_hit(atom/target, blocked = FALSE)
 	..()
@@ -67,15 +71,24 @@
 /obj/item/projectile/bullet/pellet
 	var/tile_dropoff = 0.75
 	var/tile_dropoff_s = 0.5
+	ricochets_max = 1
+	ricochet_chance = 50
+	ricochet_decay_chance = 0.9
 
 /obj/item/projectile/bullet/pellet/shotgun_buckshot
 	name = "buckshot pellet"
-	damage = 12.5
+	damage = 9
+	tile_dropoff = 0.5
 
 /obj/item/projectile/bullet/pellet/shotgun_rubbershot
 	name = "rubbershot pellet"
 	damage = 3
-	stamina = 11
+	stamina = 9
+
+/obj/item/projectile/bullet/pellet/shotgun_incapacitate
+	name = "incapacitating pellet"
+	damage = 1
+	stamina = 5
 
 /obj/item/projectile/bullet/pellet/Range()
 	..()
@@ -101,4 +114,17 @@
 // Mech Scattershot
 
 /obj/item/projectile/bullet/scattershot
-	damage = 24
+	damage = 18
+
+//Breaching Ammo
+
+/obj/item/projectile/bullet/shotgun_breaching
+	name = "12g breaching round"
+	desc = "A breaching round designed to destroy airlocks and windows with only a few shots, but is ineffective against other targets."
+	hitsound = 'sound/weapons/sonic_jackhammer.ogg'
+	damage = 10 //does shit damage to everything except doors and windows
+
+/obj/item/projectile/bullet/shotgun_breaching/on_hit(atom/target)
+	if(istype(target, /obj/structure/window) || istype(target, /obj/structure/grille) || istype(target, /obj/machinery/door) || istype(target, /obj/structure/door_assembly))
+		damage = 500 //one shot to break a window or grille, or 3 shots to breach an airlock door
+	..()

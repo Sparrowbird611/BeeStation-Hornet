@@ -1,5 +1,5 @@
 /client/proc/dsay(msg as text)
-	set category = "Special Verbs"
+	set category = "Adminbus"
 	set name = "Dsay"
 	set hidden = 1
 	if(!holder)
@@ -14,16 +14,17 @@
 	if (handle_spam_prevention(msg,MUTE_DEADCHAT))
 		return
 
-	msg = copytext(sanitize(msg), 1, MAX_MESSAGE_LEN)
+	msg = copytext_char(sanitize(msg), 1, MAX_MESSAGE_LEN)
 	mob.log_talk(msg, LOG_DSAY)
 
 	if (!msg)
 		return
 	var/rank_name = holder.rank
 	var/admin_name = key
+	//json_decode(rustg_file_read("[global.config.directory]/badges.json")
 	if(holder.fakekey)
-		rank_name = pick(strings("admin_nicknames.json", "ranks", "config"))
-		admin_name = pick(strings("admin_nicknames.json", "names", "config"))
+		rank_name = pick(strings(DSAY_NICKNAME_FILE, "ranks", CONFIG_DIRECTORY))
+		admin_name = pick(strings(DSAY_NICKNAME_FILE, "names", CONFIG_DIRECTORY))
 	var/rendered = "<span class='game deadsay'><span class='prefix'>DEAD:</span> <span class='name'>[rank_name]([admin_name])</span> says, <span class='message'>\"[emoji_parse(msg)]\"</span></span>"
 
 	for (var/mob/M in GLOB.player_list)
@@ -35,5 +36,5 @@
 	SSblackbox.record_feedback("tally", "admin_verb", 1, "Dsay") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 /client/proc/get_dead_say()
-	var/msg = input(src, null, "dsay \"text\"") as text
+	var/msg = capped_input(src, null, "dsay \"text\"")
 	dsay(msg)

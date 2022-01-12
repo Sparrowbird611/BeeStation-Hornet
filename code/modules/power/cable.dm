@@ -9,6 +9,7 @@ GLOBAL_LIST_INIT(cable_colors, list(
 	"red" = "#ff0000"
 	))
 
+
 ///////////////////////////////
 //CABLE STRUCTURE
 ///////////////////////////////
@@ -45,7 +46,12 @@ By design, d1 is the smallest direction and d2 is the highest
 	var/d1 = 0   // cable direction 1 (see above)
 	var/d2 = 1   // cable direction 2 (see above)
 	var/datum/powernet/powernet
-	var/obj/item/stack/cable_coil/stored
+
+	FASTDMM_PROP(\
+		pipe_type = PIPE_TYPE_CABLE,\
+		pipe_interference_group = list("cable"),\
+		pipe_group = "cable-[cable_color]"\
+	)
 
 	var/cable_color = "red"
 	color = "#ff0000"
@@ -84,18 +90,13 @@ By design, d1 is the smallest direction and d2 is the highest
 
 	// ensure d1 & d2 reflect the icon_state for entering and exiting cable
 	var/dash = findtext(icon_state, "-")
-	d1 = text2num( copytext( icon_state, 1, dash ) )
-	d2 = text2num( copytext( icon_state, dash+1 ) )
+	d1 = text2num(copytext(icon_state, 1, dash))
+	d2 = text2num(copytext(icon_state, dash + length(icon_state[dash])))
 
 	var/turf/T = get_turf(src)			// hide if turf is not intact
 	if(level==1)
 		hide(T.intact)
 	GLOB.cable_list += src //add it to the global cable list
-
-	if(d1)
-		stored = new/obj/item/stack/cable_coil(null,2,cable_color)
-	else
-		stored = new/obj/item/stack/cable_coil(null,1,cable_color)
 
 	var/list/cable_colors = GLOB.cable_colors
 	cable_color = param_color || cable_color || pick(cable_colors)
@@ -107,22 +108,15 @@ By design, d1 is the smallest direction and d2 is the highest
 	if(powernet)
 		cut_cable_from_powernet()				// update the powernets
 	GLOB.cable_list -= src							//remove it from global cable list
-
-	//If we have a stored item at this point, lets just delete it, since that should be
-	//handled by deconstruction
-	if(stored)
-		QDEL_NULL(stored)
 	return ..()									// then go ahead and delete the cable
 
 /obj/structure/cable/deconstruct(disassembled = TRUE)
 	if(!(flags_1 & NODECONSTRUCT_1))
 		var/turf/T = get_turf(loc)
 		if(T)
-			stored.forceMove(T)
-			stored = null
-		else
-			qdel(stored)
-	qdel(src)
+			var/obj/item/stack/cable_coil/temp_item = new /obj/item/stack/cable_coil(T, d1 ? 2 : 1, cable_color)
+			transfer_fingerprints_to(temp_item)
+	..()
 
 ///////////////////////////////////
 // General procedures
@@ -148,7 +142,6 @@ By design, d1 is the smallest direction and d2 is the highest
 		if (shock(user, 50))
 			return
 		user.visible_message("[user] cuts the cable.", "<span class='notice'>You cut the cable.</span>")
-		stored.add_fingerprint(user)
 		investigate_log("was cut by [key_name(usr)] in [AREACOORD(src)]", INVESTIGATE_WIRES)
 		deconstruct()
 		return
@@ -160,17 +153,14 @@ By design, d1 is the smallest direction and d2 is the highest
 			return
 		coil.cable_join(src, user)
 
-	else if(istype(W, /obj/item/twohanded/rcl))
-		var/obj/item/twohanded/rcl/R = W
+	else if(istype(W, /obj/item/rcl))
+		var/obj/item/rcl/R = W
 		if(R.loaded)
 			R.loaded.cable_join(src, user)
 			R.is_empty(user)
 
 	else if(W.tool_behaviour == TOOL_MULTITOOL)
-		if(powernet && (powernet.avail > 0))		// is it powered?
-			to_chat(user, "<span class='danger'>Total power: [DisplayPower(powernet.avail)]\nLoad: [DisplayPower(powernet.load)]\nExcess power: [DisplayPower(surplus())]</span>")
-		else
-			to_chat(user, "<span class='danger'>The cable is not powered.</span>")
+		to_chat(user, get_power_info())
 		shock(user, 5, 0.2)
 
 	add_fingerprint(user)
@@ -183,6 +173,10 @@ By design, d1 is the smallest direction and d2 is the highest
 /obj/structure/cable/attackby(obj/item/W, mob/user, params)
 	handlecable(W, user, params)
 
+/obj/structure/cable/examine(mob/user)
+	. = ..()
+	if(isobserver(user))
+		. += get_power_info()
 
 // shock the user with probability prb
 /obj/structure/cable/proc/shock(mob/user, prb, siemens_coeff = 1)
@@ -199,10 +193,11 @@ By design, d1 is the smallest direction and d2 is the highest
 	if(current_size >= STAGE_FIVE)
 		deconstruct()
 
-/obj/structure/cable/proc/update_stored(length = 1, colorC = "red")
-	stored.amount = length
-	stored.item_color = colorC
-	stored.update_icon()
+/obj/structure/cable/proc/get_power_info()
+	if(powernet && (powernet.avail > 0))		// is it powered?
+		return "<span class='danger'>Total power: [DisplayPower(powernet.avail)]\nLoad: [DisplayPower(powernet.load)]\nExcess power: [DisplayPower(surplus())]</span>"
+	else
+		return "<span class='danger'>The cable is not powered.</span>"
 
 ////////////////////////////////////////////
 // Power related
@@ -474,7 +469,7 @@ By design, d1 is the smallest direction and d2 is the highest
 // Definitions
 ////////////////////////////////
 
-GLOBAL_LIST_INIT(cable_coil_recipes, list (new/datum/stack_recipe("cable restraints", /obj/item/restraints/handcuffs/cable, 15)))
+GLOBAL_LIST_INIT(cable_coil_recipes, list (new/datum/stack_recipe("cable restraints", /obj/item/restraints/handcuffs/cable, 15), new/datum/stack_recipe("noose", /obj/structure/chair/noose, 30, time = 80, one_per_turf = 1, on_floor = 1)))
 
 /obj/item/stack/cable_coil
 	name = "cable coil"
@@ -744,9 +739,6 @@ GLOBAL_LIST_INIT(cable_coil_recipes, list (new/datum/stack_recipe("cable restrai
 
 		C.d1 = nd1
 		C.d2 = nd2
-
-		//updates the stored cable coil
-		C.update_stored(2, item_color)
 
 		C.add_fingerprint(user)
 		C.update_icon()

@@ -41,20 +41,18 @@ INITIALIZE_IMMEDIATE(/obj/effect/landmark)
 	if(delete_after_roundstart)
 		qdel(src)
 
-/obj/effect/landmark/start/New()
+/obj/effect/landmark/start/Initialize()
+	. = ..()
 	GLOB.start_landmarks_list += src
 	if(jobspawn_override)
-		if(!GLOB.jobspawn_overrides[name])
-			GLOB.jobspawn_overrides[name] = list()
-		GLOB.jobspawn_overrides[name] += src
-	..()
+		LAZYADDASSOC(GLOB.jobspawn_overrides, name, src)
 	if(name != "start")
 		tag = "start*[name]"
 
 /obj/effect/landmark/start/Destroy()
 	GLOB.start_landmarks_list -= src
 	if(jobspawn_override)
-		GLOB.jobspawn_overrides[name] -= src
+		LAZYREMOVEASSOC(GLOB.jobspawn_overrides, name, src)
 	return ..()
 
 // START LANDMARKS FOLLOW. Don't change the names unless
@@ -102,6 +100,10 @@ INITIALIZE_IMMEDIATE(/obj/effect/landmark)
 /obj/effect/landmark/start/shaft_miner
 	name = "Shaft Miner"
 	icon_state = "Shaft Miner"
+
+/obj/effect/landmark/start/exploration
+	name = "Exploration Crew"
+	icon_state = "Exploration Crew"
 
 /obj/effect/landmark/start/security_officer
 	name = "Security Officer"
@@ -212,6 +214,37 @@ INITIALIZE_IMMEDIATE(/obj/effect/landmark)
 /obj/effect/landmark/start/brig_phys
 	name = "Brig Physician"
 
+/obj/effect/landmark/start/randommaint
+	name = "maintjobstart"
+	icon_state = "x3"
+	var/job = "Gimmick" //put the title of the job here.
+
+/obj/effect/landmark/start/randommaint/New() //automatically opens up a job slot when the job's spawner loads in
+	..()
+	var/datum/job/J = SSjob.GetJob(job)
+	J.total_positions += 1
+	J.spawn_positions += 1
+
+/obj/effect/landmark/start/randommaint/backalley_doc
+	name = "Barber"
+	job = "Barber"
+
+/obj/effect/landmark/start/randommaint/magician
+	name = "Stage Magician"
+	job = "Stage Magician"
+
+/obj/effect/landmark/start/randommaint/hobo
+	name = "Debtor"
+	job = "Debtor"
+
+/obj/effect/landmark/start/randommaint/shrink
+	name = "Psychiatrist"
+	job = "Psychiatrist"
+
+/obj/effect/landmark/start/randommaint/celebrity
+	name = "VIP"
+	job = "VIP"
+
 //Department Security spawns
 
 /obj/effect/landmark/start/depsec
@@ -310,7 +343,7 @@ INITIALIZE_IMMEDIATE(/obj/effect/landmark/start/new_player)
 	GLOB.xeno_spawn += loc
 	return INITIALIZE_HINT_QDEL
 
-//objects with the stationloving component (nuke disk) respawn here. 
+//objects with the stationloving component (nuke disk) respawn here.
 //also blobs that have their spawn forcemoved (running out of time when picking their spawn spot), santa and respawning devils
 /obj/effect/landmark/blobstart
 	name = "blobstart"

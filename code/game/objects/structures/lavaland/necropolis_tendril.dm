@@ -29,10 +29,8 @@ GLOBAL_LIST_INIT(tendrils, list())
 /obj/structure/spawner/lavaland/Initialize()
 	. = ..()
 	emitted_light = new(loc)
-	for(var/F in RANGE_TURFS(1, src))
-		if(ismineralturf(F))
-			var/turf/closed/mineral/M = F
-			M.ScrapeAway(null, CHANGETURF_IGNORE_AIR)
+	for(var/turf/closed/mineral/M in RANGE_TURFS(1, src))
+		M.ScrapeAway(null, CHANGETURF_IGNORE_AIR)
 	AddComponent(/datum/component/gps, "Eerie Signal")
 	GLOB.tendrils += src
 
@@ -48,12 +46,12 @@ GLOBAL_LIST_INIT(tendrils, list())
 		last_tendril = FALSE
 
 	if(last_tendril && !(flags_1 & ADMIN_SPAWNED_1))
-		if(SSmedals.hub_enabled)
-			for(var/mob/living/L in view(7,src))
+		if(SSachievements.achievements_enabled)
+			for(var/mob/living/L in hearers(7,src))
 				if(L.stat || !L.client)
 					continue
-				SSmedals.UnlockMedal("[BOSS_MEDAL_TENDRIL] [ALL_KILL_MEDAL]", L.client)
-				SSmedals.SetScore(TENDRIL_CLEAR_SCORE, L.client, 1)
+				L.client.give_award(/datum/award/achievement/boss/tendril_exterminator, L)
+				L.client.give_award(/datum/award/score/tendril_score, L) //Progresses score by one
 	GLOB.tendrils -= src
 	QDEL_NULL(emitted_light)
 	QDEL_NULL(gps)
@@ -91,7 +89,7 @@ GLOBAL_LIST_INIT(tendrils, list())
 		shake_camera(M, 15, 1)
 	playsound(get_turf(src),'sound/effects/explosionfar.ogg', 200, 1)
 	visible_message("<span class='boldannounce'>The tendril falls inward, the ground around it widening into a yawning chasm!</span>")
-	for(var/turf/T in range(2,src))
+	for(var/turf/T as() in RANGE_TURFS(2,src))
 		if(!T.density)
-			T.TerraformTurf(/turf/open/chasm/lavaland, /turf/open/chasm/lavaland)
+			T.TerraformTurf(/turf/open/chasm/lavaland, /turf/open/chasm/lavaland, flags = CHANGETURF_INHERIT_AIR)
 	qdel(src)

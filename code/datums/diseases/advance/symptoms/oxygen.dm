@@ -22,18 +22,20 @@ Bonus
 	stealth = 1
 	resistance = -3
 	stage_speed = -3
-	transmittable = -4
-	level = 6
+	transmission = -4
+	severity = -1
+	level = 8
 	base_message_chance = 5
 	symptom_delay_min = 1
 	symptom_delay_max = 1
+	prefixes = list("Breathless ", "Anaerobic ")
 	var/regenerate_blood = FALSE
 	threshold_desc = "<b>Resistance 8:</b> Additionally regenerates lost blood.<br>"
 
 /datum/symptom/oxygen/Start(datum/disease/advance/A)
 	if(!..())
 		return
-	if(A.properties["resistance"] >= 8) //blood regeneration
+	if(A.resistance >= 8) //blood regeneration
 		regenerate_blood = TRUE
 
 /datum/symptom/oxygen/Activate(datum/disease/advance/A)
@@ -46,10 +48,10 @@ Bonus
 			M.adjustOxyLoss(-7, 0)
 			M.losebreath = max(0, M.losebreath - 4)
 			if(regenerate_blood && M.blood_volume < BLOOD_VOLUME_NORMAL)
-				M.blood_volume += 1
+				M.blood_volume += 8 //it takes 4 seconds to lose one point of bleed_rate. this is exactly sufficient to counter autophageocytosis' Heparin production. Theoretically.
 		else
 			if(prob(base_message_chance))
-				to_chat(M, "<span class='notice'>[pick("Your lungs feel great.", "You realize you haven't been breathing.", "You don't feel the need to breathe.")]</span>")
+				to_chat(M, "<span class='notice'>[pick("Your lungs feel great.", "You realize you haven't been breathing.", "You don't feel the need to breathe.", "Something smells rotten.", "You feel peckish.")]</span>")
 	return
 
 /datum/symptom/oxygen/on_stage_change(new_stage, datum/disease/advance/A)

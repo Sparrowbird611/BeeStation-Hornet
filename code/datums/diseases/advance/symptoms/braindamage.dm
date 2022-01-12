@@ -4,22 +4,30 @@
 	stealth = 1
 	resistance = -2
 	stage_speed = -3
-	transmittable = -1
-	level = 8
+	transmission = -1
+	level = 7
 	severity = 3
 	symptom_delay_min = 15
 	symptom_delay_max = 60
-	var/fastdamage = FALSE
+	prefixes = list("Idiot's ")
+	bodies = list("Idiot")
+	suffixes = list(" Memory Loss")
+	var/lethal = FALSE
 	var/moretrauma = FALSE
-	threshold_desc = "<b>Resistance 10:</b> Causes the host's brain cells to die off quicker.<br>\
+	threshold_desc = "<b>transmission 12:</b> The disease's damage reaches lethal levels.<br>\
 					  <b>Speed 9:</b> Host's brain develops even more traumas than normal."
+
+/datum/symptom/braindamage/severityset(datum/disease/advance/A)
+	. = ..()
+	if(A.transmission >= 12)
+		severity += 1
 
 /datum/symptom/braindamage/Start(datum/disease/advance/A)
 	if(!..())
 		return
-	if(A.properties["transmission"] >= 12)
-		fastdamage = TRUE
-	if(A.properties["speed"] >= 9)
+	if(A.transmission >= 12)
+		lethal = TRUE
+	if(A.stage_rate >= 9)
 		moretrauma = TRUE
 
 /datum/symptom/braindamage/Activate(datum/disease/advance/A)
@@ -34,13 +42,13 @@
 			if(prob(10))
 				to_chat(M, "<span class='danger'>Your brain begins hurting...</span>")
 		if(4, 5)
-			if(fastdamage)
-				if(prob(30))
-					M.adjustBrainLoss(5, 90)
+			if(lethal)
+				if(prob(35))
+					M.adjustOrganLoss(ORGAN_SLOT_BRAIN, (rand(5,90)), 200)
 					to_chat(M, "<span class='danger'>Your brain hurts immensely!</span>")
 			else
-				if(prob(15))
-					M.adjustBrainLoss(5, 90)
+				if(prob(35))
+					M.adjustOrganLoss(ORGAN_SLOT_BRAIN, (rand(5,90)), 120)
 					to_chat(M, "<span class='danger'>Your head hurts immensely!</span>")
 			if(moretrauma && A.stage == 5)
 				givetrauma(A, 10)
@@ -48,5 +56,5 @@
 /datum/symptom/braindamage/proc/givetrauma(datum/disease/advance/A, chance)
 	if(prob(chance))
 		if(ishuman(A.affected_mob))
-			var/mob/living/carbon/human/M = A.affected_mob 
+			var/mob/living/carbon/human/M = A.affected_mob
 			M?.gain_trauma(BRAIN_TRAUMA_MILD)

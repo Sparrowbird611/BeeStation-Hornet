@@ -38,6 +38,10 @@
 	health = 80
 	maxHealth = 80
 	pass_flags = PASSTABLE | PASSMOB
+	can_be_held = TRUE
+	worn_slot_flags = ITEM_SLOT_HEAD
+	held_state = "parrot"
+
 
 	speak = list("Hi!","Hello!","Cracker?","BAWWWWK george mellons griffing me!")
 	speak_emote = list("squawks","says","yells")
@@ -47,8 +51,7 @@
 	speak_chance = 1 //1% (1 in 100) chance every tick; So about once per 150 seconds, assuming an average tick is 1.5s
 	turns_per_move = 5
 	butcher_results = list(/obj/item/reagent_containers/food/snacks/cracker/ = 1)
-	melee_damage_upper = 10
-	melee_damage_lower = 5
+	melee_damage = 5
 
 	response_help  = "pets"
 	response_disarm = "gently moves aside"
@@ -60,6 +63,8 @@
 	mob_size = MOB_SIZE_SMALL
 	movement_type = FLYING
 	gold_core_spawnable = FRIENDLY_SPAWN
+	chat_color = "#A6E398"
+	mobchatspan = "curator"
 
 	var/parrot_damage_upper = 10
 	var/parrot_state = PARROT_WANDER //Hunt for a perch when created
@@ -69,7 +74,7 @@
 
 	var/parrot_speed = 5 //"Delay in world ticks between movement." according to byond. Yeah, that's BS but it does directly affect movement. Higher number = slower.
 	var/parrot_lastmove = null //Updates/Stores position of the parrot while it's moving
-	var/parrot_stuck = 0	//If parrot_lastmove hasnt changed, this will increment until it reaches parrot_stuck_threshold
+	var/parrot_stuck = 0	//If parrot_lastmove hasn't changed, this will increment until it reaches parrot_stuck_threshold
 	var/parrot_stuck_threshold = 10 //if this == parrot_stuck, it'll force the parrot back to wandering
 
 	var/list/speech_buffer = list()
@@ -105,18 +110,19 @@
 						/obj/item/radio/headset/headset_eng, \
 						/obj/item/radio/headset/headset_med, \
 						/obj/item/radio/headset/headset_sci, \
-						/obj/item/radio/headset/headset_cargo)
+						/obj/item/radio/headset/headset_cargo, \
+						/obj/item/radio/headset/headset_exploration)
 		ears = new headset(src)
 
 	parrot_sleep_dur = parrot_sleep_max //In case someone decides to change the max without changing the duration var
 
-	verbs.Add(/mob/living/simple_animal/parrot/proc/steal_from_ground, \
+	add_verb(list(/mob/living/simple_animal/parrot/proc/steal_from_ground, \
 			  /mob/living/simple_animal/parrot/proc/steal_from_mob, \
 			  /mob/living/simple_animal/parrot/verb/drop_held_item_player, \
 			  /mob/living/simple_animal/parrot/proc/perch_player, \
 			  /mob/living/simple_animal/parrot/proc/toggle_mode,
-			  /mob/living/simple_animal/parrot/proc/perch_mob_player)
-
+			  /mob/living/simple_animal/parrot/proc/perch_mob_player))
+	AddElement(/datum/element/strippable, GLOB.strippable_parrot_items)
 
 /mob/living/simple_animal/parrot/examine(mob/user)
 	. = ..()
@@ -137,13 +143,13 @@
 
 	..(gibbed)
 
-/mob/living/simple_animal/parrot/Stat()
-	..()
-	if(statpanel("Status"))
-		stat("Held Item", held_item)
-		stat("Mode",a_intent)
+/mob/living/simple_animal/parrot/get_stat_tab_status()
+	var/list/tab_data = ..()
+	tab_data["Held Item"] = GENERATE_STAT_TEXT("[held_item]")
+	tab_data["Mode"] = GENERATE_STAT_TEXT("[a_intent]")
+	return tab_data
 
-/mob/living/simple_animal/parrot/Hear(message, atom/movable/speaker, message_langs, raw_message, radio_freq, list/spans, message_mode)
+/mob/living/simple_animal/parrot/Hear(message, atom/movable/speaker, message_langs, raw_message, radio_freq, list/spans, list/message_mods = list())
 	. = ..()
 	if(speaker != src && prob(50)) //Dont imitate ourselves
 		if(!radio_freq || prob(10))
@@ -153,117 +159,120 @@
 	if(speaker == src && !client) //If a parrot squawks in the woods and no one is around to hear it, does it make a sound? This code says yes!
 		return message
 
-/mob/living/simple_animal/parrot/radio(message, message_mode, list/spans, language) //literally copied from human/radio(), but there's no other way to do this. at least it's better than it used to be.
+/mob/living/simple_animal/parrot/radio(message, list/message_mods = list(), list/spans, language)	//literally copied from human/radio(), but there's no other way to do this. at least it's better than it used to be.
 	. = ..()
 	if(. != 0)
 		return .
 
-	switch(message_mode)
-		if(MODE_HEADSET)
-			if (ears)
-				ears.talk_into(src, message, , spans, language)
-			return ITALICS | REDUCE_RANGE
-
-		if(MODE_DEPARTMENT)
-			if (ears)
-				ears.talk_into(src, message, message_mode, spans, language)
-			return ITALICS | REDUCE_RANGE
-
-	if(message_mode in GLOB.radiochannels)
+	if(message_mods[MODE_HEADSET])
 		if(ears)
-			ears.talk_into(src, message, message_mode, spans, language)
-			return ITALICS | REDUCE_RANGE
+			ears.talk_into(src, message, , spans, language, message_mods)
+		return ITALICS | REDUCE_RANGE
+	else if(message_mods[RADIO_EXTENSION] == MODE_DEPARTMENT || (GLOB.radiochannels[message_mods[RADIO_EXTENSION]]))
+		if(ears)
+			ears.talk_into(src, message, message_mods[RADIO_EXTENSION], spans, language, message_mods)
+		return ITALICS | REDUCE_RANGE
 
 	return 0
 
 /*
  * Inventory
  */
-/mob/living/simple_animal/parrot/show_inv(mob/user)
-	user.set_machine(src)
+GLOBAL_LIST_INIT(strippable_parrot_items, create_strippable_list(list(
+	/datum/strippable_item/parrot_headset
+)))
 
-	var/dat = 	"<div align='center'><b>Inventory of [name]</b></div><p>"
-	dat += "<br><B>Headset:</B> <A href='?src=[REF(src)];[ears ? "remove_inv=ears'>[ears]" : "add_inv=ears'>Nothing"]</A>"
+/datum/strippable_item/parrot_headset
+	key = STRIPPABLE_ITEM_PARROT_HEADSET
 
-	user << browse(dat, "window=mob[REF(src)];size=325x500")
-	onclose(user, "window=mob[REF(src)]")
+/datum/strippable_item/parrot_headset/get_item(atom/source)
+	var/mob/living/simple_animal/parrot/parrot_source = source
+	return istype(parrot_source) ? parrot_source.ears : null
 
+/datum/strippable_item/parrot_headset/try_equip(atom/source, obj/item/equipping, mob/user)
+	. = ..()
+	if(!.)
+		return FALSE
 
-/mob/living/simple_animal/parrot/Topic(href, href_list)
-	if(!(iscarbon(usr) || iscyborg(usr)) || !usr.canUseTopic(src, BE_CLOSE, FALSE, NO_TK))
-		usr << browse(null, "window=mob[REF(src)]")
-		usr.unset_machine()
+	if(!istype(equipping, /obj/item/radio/headset))
+		to_chat(user, "<span class='warning'>[equipping] won't fit!</span>")
+		return FALSE
+
+	return TRUE
+
+// There is no delay for putting a headset on a parrot.
+/datum/strippable_item/parrot_headset/start_equip(atom/source, obj/item/equipping, mob/user)
+	return TRUE
+
+/datum/strippable_item/parrot_headset/finish_equip(atom/source, obj/item/equipping, mob/user)
+	var/obj/item/radio/headset/radio = equipping
+	if(!istype(radio))
 		return
 
-	//Removing from inventory
-	if(href_list["remove_inv"])
-		var/remove_from = href_list["remove_inv"]
-		switch(remove_from)
-			if("ears")
-				if(!ears)
-					to_chat(usr, "<span class='warning'>There is nothing to remove from its [remove_from]!</span>")
-					return
-				if(!stat)
-					say("[available_channels.len ? "[pick(available_channels)] " : null]BAWWWWWK LEAVE THE HEADSET BAWKKKKK!")
-				ears.forceMove(drop_location())
-				ears = null
-				for(var/possible_phrase in speak)
-					if(copytext(possible_phrase,1,3) in GLOB.department_radio_keys)
-						possible_phrase = copytext(possible_phrase,3)
+	var/mob/living/simple_animal/parrot/parrot_source = source
+	if(!istype(parrot_source))
+		return
 
-	//Adding things to inventory
-	else if(href_list["add_inv"])
-		var/add_to = href_list["add_inv"]
-		if(!usr.get_active_held_item())
-			to_chat(usr, "<span class='warning'>You have nothing in your hand to put on its [add_to]!</span>")
-			return
-		switch(add_to)
-			if("ears")
-				if(ears)
-					to_chat(usr, "<span class='warning'>It's already wearing something!</span>")
-					return
-				else
-					var/obj/item/item_to_add = usr.get_active_held_item()
-					if(!item_to_add)
-						return
+	if(!user.transferItemToLoc(radio, source))
+		return
 
-					if( !istype(item_to_add,  /obj/item/radio/headset) )
-						to_chat(usr, "<span class='warning'>This object won't fit!</span>")
-						return
+	parrot_source.ears = radio
 
-					var/obj/item/radio/headset/headset_to_add = item_to_add
+	to_chat(user, "<span class='notice'>You fit [radio] onto [source].</span>")
 
-					if(!usr.transferItemToLoc(headset_to_add, src))
-						return
-					ears = headset_to_add
-					to_chat(usr, "<span class='notice'>You fit the headset onto [src].</span>")
+	parrot_source.available_channels.Cut()
 
-					clearlist(available_channels)
-					for(var/ch in headset_to_add.channels)
-						switch(ch)
-							if(RADIO_CHANNEL_ENGINEERING)
-								available_channels.Add(RADIO_TOKEN_ENGINEERING)
-							if(RADIO_CHANNEL_COMMAND)
-								available_channels.Add(RADIO_TOKEN_COMMAND)
-							if(RADIO_CHANNEL_SECURITY)
-								available_channels.Add(RADIO_TOKEN_SECURITY)
-							if(RADIO_CHANNEL_SCIENCE)
-								available_channels.Add(RADIO_TOKEN_SCIENCE)
-							if(RADIO_CHANNEL_MEDICAL)
-								available_channels.Add(RADIO_TOKEN_MEDICAL)
-							if(RADIO_CHANNEL_SUPPLY)
-								available_channels.Add(RADIO_TOKEN_SUPPLY)
-							if(RADIO_CHANNEL_SERVICE)
-								available_channels.Add(RADIO_TOKEN_SERVICE)
+	for(var/channel in radio.channels)
+		var/channel_to_add
 
-					if(headset_to_add.translate_binary)
-						available_channels.Add(MODE_TOKEN_BINARY)
-	else
-		return ..()
+		switch(channel)
+			if(RADIO_CHANNEL_ENGINEERING)
+				channel_to_add = RADIO_TOKEN_ENGINEERING
+			if(RADIO_CHANNEL_COMMAND)
+				channel_to_add = RADIO_TOKEN_COMMAND
+			if(RADIO_CHANNEL_SECURITY)
+				channel_to_add = RADIO_TOKEN_SECURITY
+			if(RADIO_CHANNEL_SCIENCE)
+				channel_to_add = RADIO_TOKEN_SCIENCE
+			if(RADIO_CHANNEL_MEDICAL)
+				channel_to_add = RADIO_TOKEN_MEDICAL
+			if(RADIO_CHANNEL_SUPPLY)
+				channel_to_add = RADIO_TOKEN_SUPPLY
+			if(RADIO_CHANNEL_EXPLORATION)
+				channel_to_add = RADIO_TOKEN_EXPLORATION
+			if(RADIO_CHANNEL_SERVICE)
+				channel_to_add = RADIO_TOKEN_SERVICE
 
+		if(channel_to_add)
+			parrot_source.available_channels += channel_to_add
+
+	if(radio.translate_binary)
+		parrot_source.available_channels.Add(MODE_TOKEN_BINARY)
+
+/datum/strippable_item/parrot_headset/start_unequip(atom/source, mob/user)
+	. = ..()
+	if(!.)
+		return FALSE
+
+	var/mob/living/simple_animal/parrot/parrot_source = source
+	if(!istype(parrot_source))
+		return
+
+	if(!parrot_source.stat)
+		parrot_source.say("[parrot_source.available_channels.len ? "[pick(parrot_source.available_channels)] " : null]BAWWWWWK LEAVE THE HEADSET BAWKKKKK!")
+
+	return TRUE
+
+/datum/strippable_item/parrot_headset/finish_unequip(atom/source, mob/user)
+	var/mob/living/simple_animal/parrot/parrot_source = source
+	if(!istype(parrot_source))
+		return
+
+	parrot_source.ears.forceMove(parrot_source.drop_location())
+	parrot_source.ears = null
 
 /*
- * Attack responces
+ * Attack responses
  */
 //Humans, monkeys, aliens
 /mob/living/simple_animal/parrot/attack_hand(mob/living/carbon/M)
@@ -305,7 +314,7 @@
 	if(parrot_state == PARROT_PERCH)
 		parrot_sleep_dur = parrot_sleep_max //Reset it's sleep timer if it was perched
 
-	if(M.melee_damage_upper > 0 && !stat)
+	if(M.melee_damage > 0 && !stat)
 		parrot_interest = M
 		parrot_state = PARROT_SWOOP | PARROT_ATTACK //Attack other animals regardless
 		icon_state = icon_living
@@ -389,7 +398,7 @@
 
 //-----SLEEPING
 	if(parrot_state == PARROT_PERCH)
-		if(parrot_perch && parrot_perch.loc != src.loc) //Make sure someone hasnt moved our perch on us
+		if(parrot_perch && parrot_perch.loc != src.loc) //Make sure someone hasn't moved our perch on us
 			if(parrot_perch in view(src))
 				parrot_state = PARROT_SWOOP | PARROT_RETURN
 				icon_state = icon_living
@@ -418,8 +427,8 @@
 						if(prob(50))
 							useradio = 1
 
-						if((copytext(possible_phrase,1,2) in GLOB.department_radio_prefixes) && (copytext(possible_phrase,2,3) in GLOB.department_radio_keys))
-							possible_phrase = "[useradio?pick(available_channels):""][copytext(possible_phrase,3)]" //crop out the channel prefix
+						if((possible_phrase[1] in GLOB.department_radio_prefixes) && (copytext_char(possible_phrase, 2, 3) in GLOB.department_radio_keys))
+							possible_phrase = "[useradio?pick(available_channels):""][copytext_char(possible_phrase, 3)]" //crop out the channel prefix
 						else
 							possible_phrase = "[useradio?pick(available_channels):""][possible_phrase]"
 
@@ -427,8 +436,8 @@
 
 				else //If we have no headset or channels to use, dont try to use any!
 					for(var/possible_phrase in speak)
-						if((copytext(possible_phrase,1,2) in GLOB.department_radio_prefixes) && (copytext(possible_phrase,2,3) in GLOB.department_radio_keys))
-							possible_phrase = copytext(possible_phrase,3) //crop out the channel prefix
+						if((possible_phrase[1] in GLOB.department_radio_prefixes) && (copytext_char(possible_phrase, 2, 3) in GLOB.department_radio_keys))
+							possible_phrase = copytext_char(possible_phrase, 3) //crop out the channel prefix
 						newspeak.Add(possible_phrase)
 				speak = newspeak
 
@@ -466,11 +475,11 @@
 					return
 			return
 
-		if(parrot_interest && parrot_interest in view(src))
+		if(parrot_interest && (parrot_interest in view(src)))
 			parrot_state = PARROT_SWOOP | PARROT_STEAL
 			return
 
-		if(parrot_perch && parrot_perch in view(src))
+		if(parrot_perch && (parrot_perch in view(src)))
 			parrot_state = PARROT_SWOOP | PARROT_RETURN
 			return
 
@@ -514,7 +523,7 @@
 //-----RETURNING TO PERCH
 	else if(parrot_state == (PARROT_SWOOP | PARROT_RETURN))
 		walk(src, 0)
-		if(!parrot_perch || !isturf(parrot_perch.loc)) //Make sure the perch exists and somehow isnt inside of something else.
+		if(!parrot_perch || !isturf(parrot_perch.loc)) //Make sure the perch exists and somehow isn't inside of something else.
 			parrot_perch = null
 			parrot_state = PARROT_WANDER
 			return
@@ -554,8 +563,8 @@
 			return
 
 		var/mob/living/L = parrot_interest
-		if(melee_damage_upper == 0)
-			melee_damage_upper = parrot_damage_upper
+		if(melee_damage == 0)
+			melee_damage = parrot_damage_upper
 			a_intent = INTENT_HARM
 
 		//If the mob is close enough to interact with
@@ -613,7 +622,7 @@
 
 /mob/living/simple_animal/parrot/proc/search_for_item()
 	var/item
-	for(var/atom/movable/AM in view(src))
+	for(var/atom/movable/AM as obj|mob in view(src))
 		//Skip items we already stole or are wearing or are too big
 		if(parrot_perch && AM.loc == parrot_perch.loc || AM.loc == src)
 			continue
@@ -628,12 +637,10 @@
 					item = I
 					break
 		if(item)
-			if(!AStar(src, get_turf(item), /turf/proc/Distance_cardinal))
+			if(!get_path_to(src, item))
 				item = null
 				continue
 			return item
-
-	return null
 
 /mob/living/simple_animal/parrot/proc/search_for_perch()
 	for(var/obj/O in view(src))
@@ -786,7 +793,7 @@
 		return
 
 	if(icon_state == icon_living)
-		for(var/atom/movable/AM in view(src,1))
+		for(var/atom/movable/AM in view(1, src))
 			for(var/perch_path in desired_perches)
 				if(istype(AM, perch_path))
 					src.forceMove(AM.loc)
@@ -813,7 +820,7 @@
 		return
 
 	if(!buckled)
-		for(var/mob/living/carbon/human/H in view(src,1))
+		for(var/mob/living/carbon/human/H in view(1, src))
 			if(H.has_buckled_mobs() && H.buckled_mobs.len >= H.max_buckled_mobs) //Already has a parrot, or is being eaten by a slime
 				continue
 			perch_on_human(H)
@@ -852,10 +859,10 @@
 		return
 
 	if(a_intent != INTENT_HELP)
-		melee_damage_upper = 0
+		melee_damage = 0
 		a_intent = INTENT_HELP
 	else
-		melee_damage_upper = parrot_damage_upper
+		melee_damage = parrot_damage_upper
 		a_intent = INTENT_HARM
 	to_chat(src, "You will now [a_intent] others.")
 	return
@@ -888,10 +895,10 @@
 		desc += " The squawks of [-rounds_survived] dead parrots ring out in your ears..."
 		add_atom_colour("#BB7777", FIXED_COLOUR_PRIORITY)
 	else if(rounds_survived > 0)
-		speak += pick("...again?", "No, It was over!", "Let me out!", "It never ends!")
+		speak += pick("again?", "No, It was over!", "Let me out!", "It never ends!")
 		desc += " Over [rounds_survived] shifts without a \"terrible\" \"accident\"!"
 	else
-		speak += pick("...alive?", "This isn't parrot heaven!", "I live, I die, I live again!", "The void fades!")
+		speak += pick("alive?", "This isn't parrot heaven!", "I live, I die, I live again!", "The void fades!")
 
 	. = ..()
 
@@ -924,7 +931,7 @@
 		var/json_file = file("data/npc_saves/Poly.json")
 		if(!fexists(json_file))
 			return
-		var/list/json = json_decode(file2text(json_file))
+		var/list/json = json_decode(rustg_file_read(json_file))
 		speech_buffer = json["phrases"]
 		rounds_survived = json["roundssurvived"]
 		longest_survival = json["longestsurvival"]
@@ -953,12 +960,6 @@
 		file_data["longestdeathstreak"] = longest_deathstreak
 	fdel(json_file)
 	WRITE_FILE(json_file, json_encode(file_data))
-
-/mob/living/simple_animal/parrot/Poly/ratvar_act()
-	playsound(src, 'sound/magic/clockwork/fellowship_armory.ogg', 75, TRUE)
-	var/mob/living/simple_animal/parrot/clock_hawk/H = new(loc)
-	H.setDir(dir)
-	qdel(src)
 
 /mob/living/simple_animal/parrot/Poly/ghost
 	name = "The Ghost of Poly"
@@ -1012,6 +1013,3 @@
 	gold_core_spawnable = NO_SPAWN
 	del_on_death = TRUE
 	deathsound = 'sound/magic/clockwork/anima_fragment_death.ogg'
-
-/mob/living/simple_animal/parrot/clock_hawk/ratvar_act()
-	return

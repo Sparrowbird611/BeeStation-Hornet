@@ -1,3 +1,4 @@
+
 /**
   * The base type for nearly all physical objects in SS13
 
@@ -7,7 +8,11 @@
 /atom
 	layer = TURF_LAYER
 	plane = GAME_PLANE
+	appearance_flags = TILE_BOUND
 	var/level = 2
+
+	/// pass_flags that we are. If any of this matches a pass_flag on a moving thing, by default, we let them through.
+	var/pass_flags_self = NONE
 
 	///If non-null, overrides a/an/some in all cases
 	var/article
@@ -46,6 +51,9 @@
 	///vis overlays managed by SSvis_overlays to automaticaly turn them like other overlays
 	var/list/managed_vis_overlays
 
+	///overlays managed by update_overlays() to prevent removing overlays that weren't added by the same proc
+	var/list/managed_overlays
+
 	///Proximity monitor associated with this atom
 	var/datum/proximity_monitor/proximity_monitor
 	///Cooldown tick timer for buckle messages
@@ -72,16 +80,41 @@
 	var/list/custom_materials
 	///Bitfield for how the atom handles materials.
 	var/material_flags = NONE
+	///Light systems, both shouldn't be active at the same time.
+	var/light_system = STATIC_LIGHT
+	///Boolean variable for toggleable lights. Has no effect without the proper light_system, light_range and light_power values.
+	var/light_on = TRUE
+	///Bitflags to determine lighting-related atom properties.
+	var/light_flags = NONE
 
+	var/flags_ricochet = NONE
+	///When a projectile tries to ricochet off this atom, the projectile ricochet chance is multiplied by this
+	var/ricochet_chance_mod = 1
+	///When a projectile ricochets off this atom, it deals the normal damage * this modifier to this atom
+	var/ricochet_damage_mod = 0.33
+
+	/// Last name used to calculate a color for the chatmessage overlays
+	var/chat_color_name
+	/// Last color calculated for the the chatmessage overlays
+	var/chat_color
+
+	///Mobs that are currently do_after'ing this atom, to be cleared from on Destroy()
+	var/list/targeted_by
+
+	///AI controller that controls this atom. type on init, then turned into an instance during runtime
+	var/datum/ai_controller/ai_controller
+
+	/// Lazylist of all messages currently on this atom
+	var/list/chat_messages
 
 /**
   * Called when an atom is created in byond (built in engine proc)
-  * 
+  *
   * Not a lot happens here in SS13 code, as we offload most of the work to the
   * [Intialization](atom.html#proc/Initialize) proc, mostly we run the preloader
   * if the preloader is being used and then call InitAtom of which the ultimate
   * result is that the Intialize proc is called.
-  * 
+  *
   * We also generate a tag here if the DF_USE_TAG flag is set on the atom
   */
 /atom/New(loc, ...)
@@ -95,21 +128,21 @@
 	var/do_initialize = SSatoms.initialized
 	if(do_initialize != INITIALIZATION_INSSATOMS)
 		args[1] = do_initialize == INITIALIZATION_INNEW_MAPLOAD
-		if(SSatoms.InitAtom(src, args))
+		if(SSatoms.InitAtom(src, FALSE, args))
 			//we were deleted
 			return
 
 /**
   * The primary method that objects are setup in SS13 with
-  * 
+  *
   * we don't use New as we have better control over when this is called and we can choose
   * to delay calls or hook other logic in and so forth
-  * 
+  *
   * During roundstart map parsing, atoms are queued for intialization in the base atom/New(),
   * After the map has loaded, then Initalize is called on all atoms one by one. NB: this
   * is also true for loading map templates as well, so they don't Initalize until all objects
   * in the map file are parsed and present in the world
-  * 
+  *
   * If you're creating an object at any point after SSInit has run then this proc will be
   * immediately be called from New.
   *
@@ -117,7 +150,7 @@
   * the Atom subsystem intialization, or if the atom is being loaded from the map template.
   * If the item is being created at runtime any time after the Atom subsystem is intialized then
   * it's false.
-  * 
+  *
   * You must always call the parent of this proc, otherwise failures will occur as the item
   * will not be seen as initalized (this can lead to all sorts of strange behaviour, like
   * the item being completely unclickable)
@@ -126,7 +159,7 @@
   *
   * Any parameters from new are passed through (excluding loc), naturally if you're loading from a map
   * there are no other arguments
-  * 
+  *
   * Must return an [initialization hint](code/__DEFINES/subsystems.html) or a runtime will occur.
   *
   * Note: the following functions don't call the base for optimization and must copypasta handling:
@@ -138,11 +171,14 @@
 		stack_trace("Warning: [src]([type]) initialized multiple times!")
 	flags_1 |= INITIALIZED_1
 
+	if(loc)
+		SEND_SIGNAL(loc, COMSIG_ATOM_CREATED, src) /// Sends a signal that the new atom `src`, has been created at `loc`
+
 	//atom color stuff
 	if(color)
 		add_atom_colour(color, FIXED_COLOUR_PRIORITY)
 
-	if (light_power && light_range)
+	if (light_system == STATIC_LIGHT && light_power && light_range)
 		update_light()
 
 	if (opacity && isturf(loc))
@@ -152,7 +188,7 @@
 	if (canSmoothWith)
 		canSmoothWith = typelist("canSmoothWith", canSmoothWith)
 
-			
+
 	if(custom_materials && custom_materials.len)
 		var/temp_list = list()
 		for(var/i in custom_materials)
@@ -163,12 +199,13 @@
 		set_custom_materials(temp_list)
 
 	ComponentInitialize()
+	InitializeAIController()
 
 	return INITIALIZE_HINT_NORMAL
 
 /**
   * Late Intialization, for code that should run after all atoms have run Intialization
-  * 
+  *
   * To have your LateIntialize proc be called, your atoms [Initalization](atom.html#proc/Initialize)
   *  proc must return the hint
   * [INITIALIZE_HINT_LATELOAD](code/__DEFINES/subsystems.html#define/INITIALIZE_HINT_LATELOAD)
@@ -202,29 +239,66 @@
 			AA.remove_from_hud(src)
 
 	if(reagents)
-		qdel(reagents)
+		QDEL_NULL(reagents)
 
 	orbiters = null // The component is attached to us normaly and will be deleted elsewhere
 
 	LAZYCLEARLIST(overlays)
 	LAZYCLEARLIST(priority_overlays)
+	LAZYCLEARLIST(managed_overlays)
+
+	for(var/i in targeted_by)
+		var/mob/M = i
+		LAZYREMOVE(M.do_afters, src)
+
+	targeted_by = null
 
 	QDEL_NULL(light)
+	QDEL_NULL(ai_controller)
 
 	return ..()
 
 /atom/proc/handle_ricochet(obj/item/projectile/P)
-	return
+	var/turf/p_turf = get_turf(P)
+	var/face_direction = get_dir(src, p_turf)
+	var/face_angle = dir2angle(face_direction)
+	var/incidence_s = GET_ANGLE_OF_INCIDENCE(face_angle, (P.Angle + 180))
+	var/a_incidence_s = abs(incidence_s)
+	if(a_incidence_s > 90 && a_incidence_s < 270)
+		return FALSE
+	if((P.flag in list("bullet", "bomb")) && P.ricochet_incidence_leeway)
+		if((a_incidence_s < 90 && a_incidence_s < 90 - P.ricochet_incidence_leeway) || (a_incidence_s > 270 && a_incidence_s -270 > P.ricochet_incidence_leeway))
+			return FALSE
+	var/new_angle_s = SIMPLIFY_DEGREES(face_angle + incidence_s)
+	P.setAngle(new_angle_s)
+	return TRUE
 
 ///Can the mover object pass this atom, while heading for the target turf
 /atom/proc/CanPass(atom/movable/mover, turf/target)
+	SHOULD_CALL_PARENT(TRUE)
+	SHOULD_BE_PURE(TRUE)
+	if(mover.movement_type & PHASING)
+		return TRUE
+	. = CanAllowThrough(mover, target)
+	// This is cheaper than calling the proc every time since most things dont override CanPassThrough
+	if(!mover.generic_canpass)
+		return mover.CanPassThrough(src, target, .)
+
+/// Returns true or false to allow the mover to move through src
+/atom/proc/CanAllowThrough(atom/movable/mover, turf/target)
+	SHOULD_CALL_PARENT(TRUE)
+	//SHOULD_BE_PURE(TRUE)
+	if(mover.pass_flags & pass_flags_self)
+		return TRUE
+	if(mover.throwing && (pass_flags_self & LETPASSTHROW))
+		return TRUE
 	return !density
 
-/** 
+/**
   * Is this atom currently located on centcom
-  * 
+  *
   * Specifically, is it on the z level and within the centcom areas
-  * 
+  *
   * You can also be in a shuttleshuttle during endgame transit
   *
   * Used in gamemode to identify mobs who have escaped and for some other areas of the code
@@ -297,7 +371,7 @@
   * If the part is a moveable atom and the  previous location of the item was a mob/living,
   * it calls the inventory handler transferItemToLoc for that mob/living and transfers the part
   * to this atom
-  * 
+  *
   * Otherwise it simply forceMoves the atom into this atom
   */
 /atom/proc/CheckParts(list/parts_list)
@@ -314,6 +388,7 @@
 				L.transferItemToLoc(M, src)
 			else
 				M.forceMove(src)
+	parts_list.Cut()
 
 ///Hook for multiz???
 /atom/proc/update_multiz(prune_on_fail = FALSE)
@@ -321,11 +396,25 @@
 
 ///Take air from the passed in gas mixture datum
 /atom/proc/assume_air(datum/gas_mixture/giver)
-	qdel(giver)
+	return null
+
+/atom/proc/assume_air_moles(datum/gas_mixture/giver, moles)
+	return null
+
+/atom/proc/assume_air_ratio(datum/gas_mixture/giver, ratio)
 	return null
 
 ///Remove air from this atom
 /atom/proc/remove_air(amount)
+	return null
+
+/atom/proc/remove_air_ratio(ratio)
+	return null
+
+/atom/proc/transfer_air(datum/gas_mixture/taker, amount)
+	return null
+
+/atom/proc/transfer_air_ratio(datum/gas_mixture/taker, ratio)
 	return null
 
 ///Return the current air environment in this atom
@@ -345,6 +434,7 @@
 
 /atom/proc/Bumped(atom/movable/AM)
 	set waitfor = FALSE
+	SEND_SIGNAL(src, COMSIG_ATOM_BUMPED, AM)
 
 /// Convenience proc to see if a container is open for chemistry handling
 /atom/proc/is_open_container()
@@ -370,9 +460,6 @@
 /atom/proc/AllowDrop()
 	return FALSE
 
-/atom/proc/CheckExit()
-	return 1
-
 ///Is this atom within 1 tile of another atom
 /atom/proc/HasProximity(atom/movable/AM as mob|obj)
 	return
@@ -381,7 +468,7 @@
   * React to an EMP of the given severity
   *
   * Default behaviour is to send the COMSIG_ATOM_EMP_ACT signal
-  * 
+  *
   * If the signal does not return protection, and there are attached wires then we call
   * emp_pulse() on the wires
   *
@@ -394,13 +481,18 @@
 	return protection // Pass the protection value collected here upwards
 
 /**
-  * React to a hit by a projectile object
-  *
-  * Default behaviour is to send the COMSIG_ATOM_BULLET_ACT and then call on_hit() on the projectile
-  */
-/atom/proc/bullet_act(obj/item/projectile/P, def_zone)
+ * React to a hit by a projectile object
+ *
+ * Default behaviour is to send the [COMSIG_ATOM_BULLET_ACT] and then call [on_hit][/obj/projectile/proc/on_hit] on the projectile
+ *
+ * @params
+ * P - projectile
+ * def_zone - zone hit
+ * piercing_hit - is this hit piercing or normal?
+ */
+/atom/proc/bullet_act(obj/item/projectile/P, def_zone, piercing_hit = FALSE)
 	SEND_SIGNAL(src, COMSIG_ATOM_BULLET_ACT, P, def_zone)
-	. = P.on_hit(src, 0, def_zone)
+	. = P.on_hit(src, 0, def_zone, piercing_hit)
 
 ///Return true if we're inside the passed in atom
 /atom/proc/in_contents_of(container)//can take class or object instance as argument
@@ -470,9 +562,35 @@
 
 	SEND_SIGNAL(src, COMSIG_PARENT_EXAMINE, user, .)
 
+/// Updates the icon of the atom
+/atom/proc/update_icon()
+	SIGNAL_HANDLER
+
+	// I expect we're going to need more return flags and options in this proc
+	var/signalOut = SEND_SIGNAL(src, COMSIG_ATOM_UPDATE_ICON)
+	if(!(signalOut & COMSIG_ATOM_NO_UPDATE_ICON_STATE))
+		update_icon_state()
+	if(!(signalOut & COMSIG_ATOM_NO_UPDATE_OVERLAYS))
+		var/list/new_overlays = update_overlays()
+		if(managed_overlays)
+			cut_overlay(managed_overlays)
+			managed_overlays = null
+		if(length(new_overlays))
+			managed_overlays = new_overlays
+			add_overlay(new_overlays)
+
+/// Updates the icon state of the atom
+/atom/proc/update_icon_state()
+
+/// Updates the overlays of the atom
+/atom/proc/update_overlays()
+	SHOULD_CALL_PARENT(TRUE)
+	. = list()
+	SEND_SIGNAL(src, COMSIG_ATOM_UPDATE_OVERLAYS, .)
+
 /**
   * An atom we are buckled or is contained within us has tried to move
-  * 
+  *
   * Default behaviour is to send a warning that the user can't move while buckled as long
   * as the buckle_message_cooldown has expired (50 ticks)
   */
@@ -481,10 +599,6 @@
 		buckle_message_cooldown = world.time + 50
 		to_chat(user, "<span class='warning'>You can't move while buckled to [src]!</span>")
 	return
-
-/// Return true if this atoms contents should not have ex_act called on ex_act
-/atom/proc/prevent_content_explosion()
-	return FALSE
 
 /// Handle what happens when your contents are exploded by a bomb
 /atom/proc/contents_explosion(severity, target)
@@ -524,6 +638,7 @@
   * throw lots of items around - singularity being a notable example)
   */
 /atom/proc/hitby(atom/movable/AM, skipcatch, hitpush, blocked, datum/thrownthing/throwingdatum)
+	SEND_SIGNAL(src, COMSIG_ATOM_HITBY, AM, skipcatch, hitpush, blocked, throwingdatum)
 	if(density && !has_gravity(AM)) //thrown stuff bounces off dense stuff in no grav, unless the thrown stuff ends up inside what it hit(embedding, bola, etc...).
 		addtimer(CALLBACK(src, .proc/hitby_react, AM), 2)
 
@@ -652,6 +767,20 @@
 /atom/proc/ratvar_act()
 	SEND_SIGNAL(src, COMSIG_ATOM_RATVAR_ACT)
 
+/**
+  * Called when lighteater is called on this.
+  */
+/atom/proc/lighteater_act(obj/item/light_eater/light_eater)
+	return
+
+/**
+  * Respond to the eminence clicking on our atom
+  *
+  * Default behaviour is to send COMSIG_ATOM_EMAG_ACT and return
+  */
+/atom/proc/eminence_act(mob/living/simple_animal/eminence/eminence)
+	SEND_SIGNAL(src, COMSIG_ATOM_EMINENCE_ACT, eminence)
+
 ///Return the values you get when an RCD eats you?
 /atom/proc/rcd_vals(mob/user, obj/item/construction/rcd/the_rcd)
 	return FALSE
@@ -667,11 +796,27 @@
 	return FALSE
 
 /**
+  * Respond to our atom being teleported
+  *
+  * Default behaviour is to send COMSIG_ATOM_TELEPORT_ACT
+  */
+/atom/proc/teleport_act()
+	SEND_SIGNAL(src,COMSIG_ATOM_TELEPORT_ACT)
+
+/**
+  * Respond to our atom being checked by a virus extrapolator
+  *
+  * Default behaviour is to send COMSIG_ATOM_EXTRAPOLATOR_ACT and return FALSE
+  */
+/atom/proc/extrapolator_act(mob/user, var/obj/item/extrapolator/E, scan = TRUE)
+	SEND_SIGNAL(src,COMSIG_ATOM_EXTRAPOLATOR_ACT, user, E, scan)
+	return FALSE
+/**
   * Implement the behaviour for when a user click drags a storage object to your atom
   *
   * This behaviour is usually to mass transfer, but this is no longer a used proc as it just
   * calls the underyling /datum/component/storage dump act if a component exists
-  * 
+  *
   * TODO these should be purely component items that intercept the atom clicks higher in the
   * call chain
   */
@@ -710,7 +855,7 @@
 
 /**
   * This proc is called when an atom in our contents has it's Destroy() called
-  * 
+  *
   * Default behaviour is to simply send COMSIG_ATOM_CONTENTS_DEL
   */
 /atom/proc/handle_atom_del(atom/A)
@@ -736,7 +881,7 @@
 
 /**
   * the sight changes to give to the mob whose perspective is set to that atom
-  * 
+  *
   * (e.g. A mob with nightvision loses its nightvision while looking through a normal camera)
   */
 /atom/proc/update_remote_sight(mob/living/user)
@@ -758,7 +903,7 @@
 
 /**
   * Called when the atom log's in or out
-  * 
+  *
   * Default behaviour is to call on_log on the location this atom is in
   */
 /atom/proc/on_log(login)
@@ -818,9 +963,9 @@
 
 /**
   * call back when a var is edited on this atom
-  * 
+  *
   * Can be used to implement special handling of vars
-  * 
+  *
   * At the atom level, if you edit a var named "color" it will add the atom colour with
   * admin level priority to the atom colours list
   *
@@ -832,7 +977,7 @@
 		flags_1 |= ADMIN_SPAWNED_1
 	. = ..()
 	switch(var_name)
-		if("color")
+		if(NAMEOF(src, color))
 			add_atom_colour(color, ADMIN_COLOUR_PRIORITY)
 
 /**
@@ -842,14 +987,96 @@
   */
 /atom/vv_get_dropdown()
 	. = ..()
-	. += "---"
-	var/turf/curturf = get_turf(src)
-	if (curturf)
-		.["Jump to"] = "?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[curturf.x];Y=[curturf.y];Z=[curturf.z]"
-	.["Modify Transform"] = "?_src_=vars;[HrefToken()];modtransform=[REF(src)]"
-	.["Add reagent"] = "?_src_=vars;[HrefToken()];addreagent=[REF(src)]"
-	.["Trigger EM pulse"] = "?_src_=vars;[HrefToken()];emp=[REF(src)]"
-	.["Trigger explosion"] = "?_src_=vars;[HrefToken()];explode=[REF(src)]"
+	VV_DROPDOWN_OPTION("", "---------")
+	if(!ismovableatom(src))
+		var/turf/curturf = get_turf(src)
+		if(curturf)
+			. += "<option value='?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[curturf.x];Y=[curturf.y];Z=[curturf.z]'>Jump To</option>"
+	VV_DROPDOWN_OPTION(VV_HK_MODIFY_TRANSFORM, "Modify Transform")
+	VV_DROPDOWN_OPTION(VV_HK_ADD_REAGENT, "Add Reagent")
+	VV_DROPDOWN_OPTION(VV_HK_TRIGGER_EMP, "EMP Pulse")
+	VV_DROPDOWN_OPTION(VV_HK_TRIGGER_EXPLOSION, "Explosion")
+	VV_DROPDOWN_OPTION(VV_HK_EDIT_FILTERS, "Edit Filters")
+	VV_DROPDOWN_OPTION(VV_HK_ADD_AI, "Add AI controller")
+
+/atom/vv_do_topic(list/href_list)
+	. = ..()
+	if(href_list[VV_HK_ADD_REAGENT] && check_rights(R_VAREDIT))
+		if(!reagents)
+			var/amount = input(usr, "Specify the reagent size of [src]", "Set Reagent Size", 50) as num
+			if(amount)
+				create_reagents(amount)
+
+		if(reagents)
+			var/chosen_id
+			switch(alert(usr, "Choose a method.", "Add Reagents", "Search", "Choose from a list", "I'm feeling lucky"))
+				if("Search")
+					var/valid_id
+					while(!valid_id)
+						chosen_id = input(usr, "Enter the ID of the reagent you want to add.", "Search reagents") as null|text
+						if(isnull(chosen_id)) //Get me out of here!
+							break
+						if (!ispath(text2path(chosen_id)))
+							chosen_id = pick_closest_path(chosen_id, make_types_fancy(subtypesof(/datum/reagent)))
+							if (ispath(chosen_id))
+								valid_id = TRUE
+						else
+							valid_id = TRUE
+						if(!valid_id)
+							to_chat(usr, "<span class='warning'>A reagent with that ID doesn't exist!</span>")
+				if("Choose from a list")
+					chosen_id = input(usr, "Choose a reagent to add.", "Choose a reagent.") as null|anything in subtypesof(/datum/reagent)
+				if("I'm feeling lucky")
+					chosen_id = pick(subtypesof(/datum/reagent))
+			if(chosen_id)
+				var/amount = input(usr, "Choose the amount to add.", "Choose the amount.", reagents.maximum_volume) as num
+				if(amount)
+					reagents.add_reagent(chosen_id, amount)
+					log_admin("[key_name(usr)] has added [amount] units of [chosen_id] to [src]")
+					message_admins("<span class='notice'>[key_name(usr)] has added [amount] units of [chosen_id] to [src]</span>")
+	if(href_list[VV_HK_TRIGGER_EXPLOSION] && check_rights(R_FUN))
+		usr.client.cmd_admin_explosion(src)
+	if(href_list[VV_HK_TRIGGER_EMP] && check_rights(R_FUN))
+		usr.client.cmd_admin_emp(src)
+	if(href_list[VV_HK_MODIFY_TRANSFORM] && check_rights(R_VAREDIT))
+		var/result = input(usr, "Choose the transformation to apply","Transform Mod") as null|anything in list("Scale","Translate","Rotate")
+		var/matrix/M = transform
+		switch(result)
+			if("Scale")
+				var/x = input(usr, "Choose x mod","Transform Mod") as null|num
+				var/y = input(usr, "Choose y mod","Transform Mod") as null|num
+				if(!isnull(x) && !isnull(y))
+					transform = M.Scale(x,y)
+			if("Translate")
+				var/x = input(usr, "Choose x mod","Transform Mod") as null|num
+				var/y = input(usr, "Choose y mod","Transform Mod") as null|num
+				if(!isnull(x) && !isnull(y))
+					transform = M.Translate(x,y)
+			if("Rotate")
+				var/angle = input(usr, "Choose angle to rotate","Transform Mod") as null|num
+				if(!isnull(angle))
+					transform = M.Turn(angle)
+	if(href_list[VV_HK_AUTO_RENAME] && check_rights(R_VAREDIT))
+		var/newname = input(usr, "What do you want to rename this to?", "Automatic Rename") as null|text
+		if(newname)
+			vv_auto_rename(newname)
+	if(href_list[VV_HK_ADD_AI])
+		if(!check_rights(R_VAREDIT))
+			return
+		var/result = input(usr, "Choose the AI controller to apply to this atom WARNING: Not all AI works on all atoms.", "AI controller") as null|anything in subtypesof(/datum/ai_controller)
+		if(!result)
+			return
+		ai_controller = new result(src)
+
+	if(href_list[VV_HK_EDIT_FILTERS] && check_rights(R_VAREDIT))
+		var/client/C = usr.client
+		C?.open_filter_editor(src)
+
+/atom/vv_get_header()
+	. = ..()
+	var/refid = REF(src)
+	. += "[VV_HREF_TARGETREF(refid, VV_HK_AUTO_RENAME, "<b id='name'>[src]</b>")]"
+	. += "<br><font size='1'><a href='?_src_=vars;[HrefToken()];rotatedatum=[refid];rotatedir=left'><<</a> <a href='?_src_=vars;[HrefToken()];datumedit=[refid];varnameedit=dir' id='dir'>[dir2text(dir) || dir]</a> <a href='?_src_=vars;[HrefToken()];rotatedatum=[refid];rotatedir=right'>>></a></font>"
 
 ///Where atoms should drop if taken from this atom
 /atom/proc/drop_location()
@@ -858,34 +1085,38 @@
 		return null
 	return L.AllowDrop() ? L : L.drop_location()
 
-/**
-  * An atom has entered this atom's contents
-  *
-  * Default behaviour is to send the COMSIG_ATOM_ENTERED
-  */
-/atom/Entered(atom/movable/AM, atom/oldLoc)
-	SEND_SIGNAL(src, COMSIG_ATOM_ENTERED, AM, oldLoc)
+/atom/proc/vv_auto_rename(newname)
+	name = newname
 
 /**
-  * An atom is attempting to exit this atom's contents
-  *
-  * Default behaviour is to send the COMSIG_ATOM_EXIT
-  *
-  * Return value should be set to FALSE if the moving atom is unable to leave,
-  * otherwise leave value the result of the parent call
-  */
-/atom/Exit(atom/movable/AM, atom/newLoc)
-	. = ..()
-	if(SEND_SIGNAL(src, COMSIG_ATOM_EXIT, AM, newLoc) & COMPONENT_ATOM_BLOCK_EXIT)
+ * An atom has entered this atom's contents
+ *
+ * Default behaviour is to send the [COMSIG_ATOM_ENTERED]
+ */
+/atom/Entered(atom/movable/arrived, atom/old_loc, list/atom/old_locs)
+	SEND_SIGNAL(src, COMSIG_ATOM_ENTERED, arrived, old_loc, old_locs)
+
+/**
+ * An atom is attempting to exit this atom's contents
+ *
+ * Default behaviour is to send the [COMSIG_ATOM_EXIT]
+ */
+/atom/Exit(atom/movable/leaving, direction)
+	// Don't call `..()` here, otherwise `Uncross()` gets called.
+	// See the doc comment on `Uncross()` to learn why this is bad.
+
+	if(SEND_SIGNAL(src, COMSIG_ATOM_EXIT, leaving, direction) & COMPONENT_ATOM_BLOCK_EXIT)
 		return FALSE
 
+	return TRUE
+
 /**
-  * An atom has exited this atom's contents
-  *
-  * Default behaviour is to send the COMSIG_ATOM_EXITED
-  */
-/atom/Exited(atom/movable/AM, atom/newLoc)
-	SEND_SIGNAL(src, COMSIG_ATOM_EXITED, AM, newLoc)
+ * An atom has exited this atom's contents
+ *
+ * Default behaviour is to send the [COMSIG_ATOM_EXITED]
+ */
+/atom/Exited(atom/movable/gone, direction)
+	SEND_SIGNAL(src, COMSIG_ATOM_EXITED, gone, direction)
 
 ///Return atom temperature
 /atom/proc/return_temperature()
@@ -893,12 +1124,16 @@
 
 /**
   *Tool behavior procedure. Redirects to tool-specific procs by default.
-  * 
+  *
   * You can override it to catch all tool interactions, for use in complex deconstruction procs.
-  * 
+  *
   * Must return  parent proc ..() in the end if overridden
   */
 /atom/proc/tool_act(mob/living/user, obj/item/I, tool_type)
+	var/signal_result
+	signal_result = SEND_SIGNAL(src, COMSIG_ATOM_TOOL_ACT(tool_type), user, I)
+	if(signal_result & COMPONENT_BLOCK_TOOL_ATTACK) // The COMSIG_ATOM_TOOL_ACT signal is blocking the act
+		return TOOL_ACT_SIGNAL_BLOCKING
 	switch(tool_type)
 		if(TOOL_CROWBAR)
 			return crowbar_act(user, I)
@@ -936,7 +1171,7 @@
 
 ///Screwdriver act
 /atom/proc/screwdriver_act(mob/living/user, obj/item/I)
-	SEND_SIGNAL(src, COMSIG_ATOM_SCREWDRIVER_ACT, user, I)
+	return
 
 ///Wrench act
 /atom/proc/wrench_act(mob/living/user, obj/item/I)
@@ -1053,29 +1288,66 @@
 		var/reverse_message = "has been [what_done] by [ssource][postfix]"
 		target.log_message(reverse_message, LOG_ATTACK, color="orange", log_globally=FALSE)
 
-/atom/movable/proc/add_filter(name,priority,list/params)
-	if(!filter_data)
-		filter_data = list()
+/atom/proc/add_filter(name,priority,list/params)
+	LAZYINITLIST(filter_data)
 	var/list/p = params.Copy()
 	p["priority"] = priority
 	filter_data[name] = p
 	update_filters()
 
-/atom/movable/proc/update_filters()
+/atom/proc/update_filters()
 	filters = null
-	sortTim(filter_data,associative = TRUE)
+	filter_data = sortTim(filter_data, /proc/cmp_filter_data_priority, TRUE)
 	for(var/f in filter_data)
 		var/list/data = filter_data[f]
 		var/list/arguments = data.Copy()
 		arguments -= "priority"
 		filters += filter(arglist(arguments))
+	UNSETEMPTY(filter_data)
 
-/atom/movable/proc/get_filter(name)
+/atom/proc/transition_filter(name, time, list/new_params, easing, loop)
+	var/filter = get_filter(name)
+	if(!filter)
+		return
+
+	var/list/old_filter_data = filter_data[name]
+
+	var/list/params = old_filter_data.Copy()
+	for(var/thing in new_params)
+		params[thing] = new_params[thing]
+
+	animate(filter, new_params, time = time, easing = easing, loop = loop)
+	for(var/param in params)
+		filter_data[name][param] = params[param]
+
+/atom/proc/change_filter_priority(name, new_priority)
+	if(!filter_data || !filter_data[name])
+		return
+
+	filter_data[name]["priority"] = new_priority
+	update_filters()
+
+/atom/proc/get_filter(name)
 	if(filter_data && filter_data[name])
 		return filters[filter_data.Find(name)]
 
+/atom/proc/remove_filter(name_or_names)
+	if(!filter_data)
+		return
+
+	var/list/names = islist(name_or_names) ? name_or_names : list(name_or_names)
+
+	for(var/name in names)
+		if(filter_data[name])
+			filter_data -= name
+	update_filters()
+
+/atom/proc/clear_filters()
+	filter_data = null
+	filters = null
+
 /atom/proc/intercept_zImpact(atom/movable/AM, levels = 1)
-	return FALSE
+	. |= SEND_SIGNAL(src, COMSIG_ATOM_INTERCEPT_Z_FALL, AM, levels)
 
 ///Sets the custom materials for an item.
 /atom/proc/set_custom_materials(var/list/materials, multiplier = 1)
@@ -1086,7 +1358,7 @@
 
 	if(!length(materials))
 		return
-		
+
 	custom_materials = list() //Reset the list
 
 	for(var/x in materials)
@@ -1094,3 +1366,36 @@
 
 		custom_material.on_applied(src, materials[custom_material] * multiplier, material_flags)
 		custom_materials[custom_material] += materials[custom_material] * multiplier
+
+/**
+  * Causes effects when the atom gets hit by a rust effect from heretics
+  *
+  * Override this if you want custom behaviour in whatever gets hit by the rust
+  */
+/atom/proc/rust_heretic_act()
+	return
+
+/**
+  * Used to set something as 'open' if it's being used as a supplypod
+  *
+  * Override this if you want an atom to be usable as a supplypod.
+  */
+/atom/proc/setOpened()
+	return
+
+/**
+  * Used to set something as 'closed' if it's being used as a supplypod
+  *
+  * Override this if you want an atom to be usable as a supplypod.
+  */
+/atom/proc/setClosed()
+	return
+
+/**
+* Instantiates the AI controller of this atom. Override this if you want to assign variables first.
+*
+* This will work fine without manually passing arguments.
++*/
+/atom/proc/InitializeAIController()
+	if(ai_controller)
+		ai_controller = new ai_controller(src)

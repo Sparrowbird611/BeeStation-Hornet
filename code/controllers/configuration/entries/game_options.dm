@@ -70,7 +70,7 @@
 
 /datum/config_entry/flag/disable_peaceborg
 
-/datum/config_entry/flag/economy	//money money money money money money money money money money money money
+/datum/config_entry/flag/donator_items 	// do you need to be a donator to use donator items
 
 /datum/config_entry/number/traitor_scaling_coeff	//how much does the amount of players get divided by to determine traitors
 	config_entry_value = 6
@@ -83,6 +83,11 @@
 	min_val = 1
 
 /datum/config_entry/number/changeling_scaling_coeff	//how much does the amount of players get divided by to determine changelings
+	config_entry_value = 6
+	integer = FALSE
+	min_val = 1
+
+/datum/config_entry/number/ecult_scaling_coeff	//how much does the amount of players get divided by to determine e_cult
 	config_entry_value = 6
 	integer = FALSE
 	min_val = 1
@@ -105,11 +110,38 @@
 	config_entry_value = 2
 	min_val = 0
 
+/datum/config_entry/number/incursion_cost_base	//how many players per the first incursionist
+	config_entry_value = 6
+	integer = FALSE
+	min_val = 0
+
+/datum/config_entry/number/incursion_cost_increment	//How much each member of the incursion's spawn price increases by
+	config_entry_value = 0.25
+	integer = FALSE
+	min_val = 0
+
+/datum/config_entry/number/incursion_count_min	//Min number of players in the group
+	config_entry_value = 2
+	integer = TRUE
+	min_val = 1
+
+/datum/config_entry/number/incursion_count_max	//Max number of players in the group
+	config_entry_value = 6
+	integer = TRUE
+	min_val = 1
+
+/datum/config_entry/number/incursion_objective_amount	//How many objective
+	config_entry_value = 4
+	integer = TRUE
+	min_val = 0
+
 /datum/config_entry/flag/reactionary_explosions	//If we use reactionary explosions, explosions that react to walls and doors
 
 /datum/config_entry/flag/protect_roles_from_antagonist	//If security and such can be traitor/cult/other
 
 /datum/config_entry/flag/protect_assistant_from_antagonist	//If assistants can be traitor/cult/other
+
+/datum/config_entry/flag/protect_heads_from_antagonist	//If heads can be traitor/cult/other
 
 /datum/config_entry/flag/enforce_human_authority	//If non-human species are barred from joining as a head of staff
 
@@ -132,6 +164,13 @@
 	integer = FALSE
 	min_val = 0
 
+/datum/config_entry/flag/equal_job_weight
+
+/datum/config_entry/number/default_rep_value
+	config_entry_value = 5
+	integer = FALSE
+	min_val = 0
+
 /datum/config_entry/number/midround_antag_time_check	// How late (in minutes you want the midround antag system to stay on, setting this to 0 will disable the system)
 	config_entry_value = 60
 	integer = FALSE
@@ -151,6 +190,10 @@
 /datum/config_entry/flag/show_game_type_odds	//if set this allows players to see the odds of each roundtype on the get revision screen
 
 /datum/config_entry/keyed_list/roundstart_races	//races you can play as from the get go.
+	key_mode = KEY_MODE_TEXT
+	value_mode = VALUE_MODE_FLAG
+
+/datum/config_entry/keyed_list/paywall_races	//races you have to be a subscriber to play as
 	key_mode = KEY_MODE_TEXT
 	value_mode = VALUE_MODE_FLAG
 
@@ -206,7 +249,11 @@
 
 /datum/config_entry/flag/ooc_during_round
 
+/datum/config_entry/flag/looc_enabled
+
 /datum/config_entry/flag/emojis
+
+/datum/config_entry/flag/badges
 
 /datum/config_entry/keyed_list/multiplicative_movespeed
 	key_mode = KEY_MODE_TYPE
@@ -327,7 +374,7 @@
 	min_val = 0
 
 /datum/config_entry/number/space_budget
-	config_entry_value = 16
+	config_entry_value = 40
 	integer = FALSE
 	min_val = 0
 
@@ -388,3 +435,25 @@
 	config_entry_value = 100
 /datum/config_entry/number/max_slimes
 	config_entry_value = 100
+/datum/config_entry/number/max_slimeperson_bodies
+	config_entry_value = 10
+
+
+//Shuttle size limiter
+/datum/config_entry/number/max_shuttle_count
+	config_entry_value = 6
+
+/datum/config_entry/number/max_shuttle_size
+	config_entry_value = 250
+
+/datum/config_entry/flag/restricted_suicide
+
+/datum/config_entry/flag/dynamic_config_enabled
+
+//Default Game Mode
+/datum/config_entry/string/master_mode
+	config_entry_value = "extended"
+
+/datum/config_entry/flag/spare_enforce_coc
+
+/datum/config_entry/flag/station_traits

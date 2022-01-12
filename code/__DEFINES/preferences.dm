@@ -36,14 +36,26 @@
 #define CHAT_GHOSTPDA		(1<<8)
 #define CHAT_GHOSTRADIO 	(1<<9)
 #define CHAT_BANKCARD  (1<<10)
+#define CHAT_GHOSTLAWS	(1<<11)
 
-#define TOGGLES_DEFAULT_CHAT (CHAT_OOC|CHAT_DEAD|CHAT_GHOSTEARS|CHAT_GHOSTSIGHT|CHAT_PRAYER|CHAT_RADIO|CHAT_PULLR|CHAT_GHOSTWHISPER|CHAT_GHOSTPDA|CHAT_GHOSTRADIO|CHAT_BANKCARD)
+#define TOGGLES_DEFAULT_CHAT (CHAT_OOC|CHAT_DEAD|CHAT_GHOSTEARS|CHAT_GHOSTSIGHT|CHAT_PRAYER|CHAT_RADIO|CHAT_PULLR|CHAT_GHOSTWHISPER|CHAT_GHOSTPDA|CHAT_GHOSTRADIO|CHAT_BANKCARD|CHAT_GHOSTLAWS)
 
 #define PARALLAX_INSANE -1 //for show offs
 #define PARALLAX_HIGH    0 //default.
 #define PARALLAX_MED     1
 #define PARALLAX_LOW     2
 #define PARALLAX_DISABLE 3 //this option must be the highest number
+
+#define PIXEL_SCALING_AUTO 0
+#define PIXEL_SCALING_1X 1
+#define PIXEL_SCALING_1_2X 1.5
+#define PIXEL_SCALING_2X 2
+#define PIXEL_SCALING_3X 3
+#define PIXEL_SCALING_4X 4
+
+#define SCALING_METHOD_NORMAL "normal"
+#define SCALING_METHOD_DISTORT "distort"
+#define SCALING_METHOD_BLUR "blur"
 
 #define PARALLAX_DELAY_DEFAULT world.tick_lag
 #define PARALLAX_DELAY_MED     1
@@ -67,6 +79,7 @@
 #define EXP_TYPE_SECURITY		"Security"
 #define EXP_TYPE_SILICON		"Silicon"
 #define EXP_TYPE_SERVICE		"Service"
+#define EXP_TYPE_GIMMICK		"Gimmick"
 #define EXP_TYPE_ANTAG			"Antag"
 #define EXP_TYPE_SPECIAL		"Special"
 #define EXP_TYPE_GHOST			"Ghost"
@@ -82,3 +95,28 @@
 #define JP_LOW 1
 #define JP_MEDIUM 2
 #define JP_HIGH 3
+
+//Backpacks
+#define GBACKPACK "Grey Backpack"
+#define GSATCHEL "Grey Satchel"
+#define GDUFFELBAG "Grey Duffel Bag"
+#define LSATCHEL "Leather Satchel"
+#define DBACKPACK "Department Backpack"
+#define DSATCHEL "Department Satchel"
+#define DDUFFELBAG "Department Duffel Bag"
+
+//Suit/Skirt
+#define PREF_SUIT "Jumpsuit"
+#define PREF_SKIRT "Jumpskirt"
+
+//Uplink spawn loc
+#define UPLINK_PDA "PDA"
+#define UPLINK_RADIO "Radio"
+#define UPLINK_PEN "Pen" //like a real spy!
+#define UPLINK_IMPLANT "Implant"
+#define UPLINK_IMPLANT_WITH_PRICE "[UPLINK_IMPLANT] (-[UPLINK_IMPLANT_TELECRYSTAL_COST] TC)"
+
+//Plasmamen helmet styles, when you edit those remember to edit list in preferences.dm
+#define HELMET_DEFAULT "Default"
+#define HELMET_MK2 "Mark II"
+#define HELMET_PROTECTIVE "Protective"

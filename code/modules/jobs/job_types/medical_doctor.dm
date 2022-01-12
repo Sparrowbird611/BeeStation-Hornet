@@ -8,15 +8,25 @@
 	spawn_positions = 3
 	supervisors = "the chief medical officer"
 	selection_color = "#d4ebf2"
+	chat_color = "#6CB1C5"
+	exp_requirements = 120
+	exp_type = EXP_TYPE_CREW
 
 	outfit = /datum/outfit/job/doctor
 
 	access = list(ACCESS_MEDICAL, ACCESS_MORGUE, ACCESS_SURGERY, ACCESS_CHEMISTRY, ACCESS_GENETICS, ACCESS_CLONING, ACCESS_VIROLOGY, ACCESS_MECH_MEDICAL, ACCESS_MINERAL_STOREROOM, ACCESS_MAINT_TUNNELS)
-	minimal_access = list(ACCESS_MEDICAL, ACCESS_MORGUE, ACCESS_SURGERY, ACCESS_CLONING, ACCESS_MECH_MEDICAL, ACCESS_MINERAL_STOREROOM, ACCESS_MAINT_TUNNELS, ACCESS_APOTHECARY)
+	minimal_access = list(ACCESS_MEDICAL, ACCESS_MORGUE, ACCESS_SURGERY, ACCESS_CLONING, ACCESS_MECH_MEDICAL, ACCESS_MINERAL_STOREROOM, ACCESS_MAINT_TUNNELS)
 	paycheck = PAYCHECK_MEDIUM
 	paycheck_department = ACCOUNT_MED
 
 	display_order = JOB_DISPLAY_ORDER_MEDICAL_DOCTOR
+	departments = DEPARTMENT_MEDICAL
+	rpg_title = "Cleric"
+
+	species_outfits = list(
+		SPECIES_PLASMAMAN = /datum/outfit/plasmaman/medical
+	)
+	biohazard = 20
 
 /datum/outfit/job/doctor
 	name = "Medical Doctor"
@@ -25,10 +35,11 @@
 	id = /obj/item/card/id/job/med
 	belt = /obj/item/pda/medical
 	ears = /obj/item/radio/headset/headset_med
-	uniform = /obj/item/clothing/under/rank/medical
+	uniform = /obj/item/clothing/under/rank/medical/doctor
 	shoes = /obj/item/clothing/shoes/sneakers/white
 	suit =  /obj/item/clothing/suit/toggle/labcoat
-	l_hand = /obj/item/storage/firstaid/regular
+	gloves = /obj/item/clothing/gloves/color/latex/nitrile
+	l_hand = /obj/item/storage/firstaid/medical
 	suit_store = /obj/item/flashlight/pen
 
 	backpack = /obj/item/storage/backpack/medic
